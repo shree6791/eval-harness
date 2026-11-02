@@ -112,6 +112,35 @@ def score(rows):
     return res
 
 
+def bars(scored, tau, split, n, out):
+    """Four panels: accuracy, $ per 1,000, $ per correct, median seconds. One bar group per setup."""
+    setups = ["Nemotron alone", "Kimi K3 alone", f"Cascade tau={tau}"]
+    names = {"Nemotron alone": "Nemotron 3 Ultra\nalone", "Kimi K3 alone": "Kimi K3\nalone",
+             f"Cascade tau={tau}": "Cascade\n(Nemotron x3 +\nKimi repair)"}
+    panels = [("acc", "Accuracy, %", "{:.1f}%"), ("usd1k", "Cost, $ per 1,000 questions", "${:.2f}"),
+              ("per_correct", "Cost, $ per correct answer", "${:.3f}"), ("p50s", "Median time to answer, s", "{:.1f} s")]
+    fig, axes = plt.subplots(1, 4, figsize=(20, 6))
+    width = 0.8 / len(scored)
+    x = np.arange(len(setups))
+    for ax, (key, title, fmt) in zip(axes, panels):
+        for j, (colour, (name, res)) in enumerate(zip(COLOURS, scored.items())):
+            vals = [res[s][key] for s in setups]
+            pos = x + (j - (len(scored) - 1) / 2) * width
+            bs = ax.bar(pos, vals, width, color=colour, label=name)
+            for b, v in zip(bs, vals):
+                ax.annotate(fmt.format(v), (b.get_x() + b.get_width() / 2, b.get_height()),
+                            textcoords="offset points", xytext=(0, 3), ha="center", fontsize=10)
+        ax.set_title(title, fontsize=13)
+        ax.set_xticks(x, [names[s] for s in setups], fontsize=10)
+        ax.margins(y=0.15)
+        ax.grid(axis="y", alpha=0.3)
+    axes[0].legend(fontsize=11)
+    fig.suptitle(f"BIRD Mini-Dev, {split} split, n = {n}. Cascade at τ = {tau}.", fontsize=15)
+    fig.tight_layout()
+    fig.savefig(out, dpi=150)
+    print(f"bars -> {out}")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("runs", nargs="*", help="saved runs (results/*.json)")
@@ -119,6 +148,8 @@ def main():
     ap.add_argument("--old-gate", action="store_true", help="export with the gate rule before 9e71811")
     ap.add_argument("--split", choices=["tune", "test", "all"], default="test")
     ap.add_argument("--out", default="chart_compare.png")
+    ap.add_argument("--bars-out", default="chart_bars.png")
+    ap.add_argument("--tau", type=int, default=4, help="cascade setting shown in the bar charts")
     a = ap.parse_args()
     if a.export:
         export(*a.export, old_gate=a.old_gate)
@@ -136,6 +167,8 @@ def main():
         for setup, m in res.items():
             esc = f"{m['esc']:.0f}%" if "esc" in m else ""
             print(f"  {setup:16s} {m['acc']:8.1f}% {m['usd1k']:8.2f} {m['per_correct']:10.4f} {m['p50s']:6.1f} {esc:>9s}")
+
+    bars(scored, a.tau, a.split, len(shared), a.bars_out)
 
     fig, ax = plt.subplots(figsize=(11, 7))
     for colour, (name, res) in zip(COLOURS, scored.items()):
