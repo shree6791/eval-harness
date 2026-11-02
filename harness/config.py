@@ -29,6 +29,10 @@ MAX_TOKENS = 8192
 # Kimi K3 reasons by default and used all 8,192 tokens on tune qid 16 (empty reply).
 # A bigger budget keeps the large-alone baseline from being cut off.
 MAX_TOKENS_BY_MODEL = {LARGE: 16384}
+# In the full run ~2% of Kimi K3 replies spent all 16,384 tokens reasoning and
+# returned no SQL. Those are retried once with this budget; other replies keep
+# their cached 16,384-token result.
+RETRY_MAX_TOKENS = {LARGE: 32768}
 
 K = 3  # cheap samples per question
 TEMP_A = 0.6  # pass A temperature; 0 gives identical samples and a flat curve
@@ -37,7 +41,11 @@ GOLD_TIMEOUT_S = 30.0  # reference queries can be slow
 MAX_ROWS = 10_000
 EMPTY_IS_FAILURE = True
 SEED = 42
-CONCURRENCY = 24
+CONCURRENCY = 20
+# Kimi K3 calls run 1-3 minutes each, so 24 slots sent only ~8 calls/min late in the full run.
+# Its own pool of 48 got HTTP 429s from Fireworks near the end of the run (144 failed calls), so it is back to 20,
+# still separate from the cheap pool.
+CONCURRENCY_BY_MODEL = {LARGE: 20}
 TAU = 2  # placeholder until the tune sweep. Restart the service after changing it.
 
 

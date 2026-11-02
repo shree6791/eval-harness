@@ -15,11 +15,26 @@ from pathlib import Path
 
 from openai import AsyncOpenAI
 
-from harness.config import CONCURRENCY, MAX_TOKENS, MAX_TOKENS_BY_MODEL, PRICE, REASONING
+from harness.config import (
+    CONCURRENCY,
+    CONCURRENCY_BY_MODEL,
+    MAX_TOKENS,
+    MAX_TOKENS_BY_MODEL,
+    PRICE,
+    REASONING,
+    RETRY_MAX_TOKENS,
+)
 
 CACHE = Path("cache")
 CACHE.mkdir(exist_ok=True)
-SEM = asyncio.Semaphore(CONCURRENCY)
+SEMS = {}
+
+
+def _sem(model):
+    """One concurrency pool per model, so slow large-model calls do not starve cheap ones."""
+    if model not in SEMS:
+        SEMS[model] = asyncio.Semaphore(CONCURRENCY_BY_MODEL.get(model, CONCURRENCY))
+    return SEMS[model]
 
 _client = None
 
@@ -51,9 +66,28 @@ def clean(text):
     return sql.strip().rstrip(";").strip()
 
 
-async def call(model, prompt, temperature, sample=0, tag="main", use_cache=True):
+async def call(model, prompt, temperature, sample=0, tag="main", use_cache=True, max_tokens=None):
+    """One model call. A reply cut off with no SQL is retried once with RETRY_MAX_TOKENS.
+
+    The retry's record carries the cut-off attempt's tokens and time, so cost
+    and latency include the wasted call.
+    """
+    rec = await _call(model, prompt, temperature, sample, tag, use_cache, max_tokens)
+    retry = RETRY_MAX_TOKENS.get(model)
+    if rec.get("finish") == "length" and not rec["sql"] and retry and (max_tokens or 0) < retry:
+        print(f"retry: {model.rsplit('/', 1)[-1]} cut off with no SQL, retrying at max_tokens={retry}", flush=True)
+        again = await call(model, prompt, temperature, sample, tag, use_cache, max_tokens=retry)
+        again = dict(again)
+        for k in ("tin", "tout", "ms"):
+            again[k] += rec[k]
+        again["retried_after_length"] = True
+        return again
+    return rec
+
+
+async def _call(model, prompt, temperature, sample, tag, use_cache, max_tokens):
     effort = REASONING.get(model)
-    max_tokens = MAX_TOKENS_BY_MODEL.get(model, MAX_TOKENS)
+    max_tokens = max_tokens or MAX_TOKENS_BY_MODEL.get(model, MAX_TOKENS)
     key = hashlib.sha256(
         json.dumps([model, prompt, temperature, sample, tag, max_tokens, effort]).encode()
     ).hexdigest()
@@ -64,13 +98,15 @@ async def call(model, prompt, temperature, sample=0, tag="main", use_cache=True)
     client = get_client()
     for attempt in range(8):
         try:
-            async with SEM:
+            async with _sem(model):
                 t0 = time.monotonic()
                 r = await client.chat.completions.create(
                     model=model,
                     temperature=temperature,
                     max_tokens=max_tokens,
                     messages=[{"role": "user", "content": prompt}],
+                    # Long budgets need longer than the 300 s client default (~60 tokens/s).
+                    timeout=max(300, max_tokens / 40),
                     **extra,
                 )
                 ms = (time.monotonic() - t0) * 1000
