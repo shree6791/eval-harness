@@ -17,3 +17,4 @@ Settings in the runbook change only through an entry here.
 | 2 Nov, 12:15 PT | Smoke test | Replies were empty because reasoning used the 2,048-token cap. `max_tokens` is now 8,192; `reasoning_effort` is `none` for the cheap tier and `low` for the cheap backup; others use their default. Both settings are in the cache key. Client timeout is 120 s. Records store `finish`, and `raw` when no SQL is found. | 6 |
 | 2 Nov, 12:15 PT | Smoke test | `clean()` falls back to the first SELECT or WITH line when there is no code fence. Both prompts ask for one query in a ```sql block. | 6 |
 | 2 Nov, 12:15 PT | Smoke test | 20 tune questions: 0 empty, 0 truncated replies. Cheap alone 25%, Kimi K3 alone 45%. Cheap p50 2.6 s; Kimi p50 9.0 s, p95 121 s. | 6 |
+| 2 Nov, 12:25 PT | Full run | `CONCURRENCY` raised from 16 to 48. At 16 the full run did ~70 calls a minute (Kimi K3 latency); at 48 it does ~290 with no rate-limit errors. Cache keys are unchanged. | 6 |

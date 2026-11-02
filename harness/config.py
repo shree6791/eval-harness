@@ -34,7 +34,7 @@ GOLD_TIMEOUT_S = 30.0  # reference queries can be slow
 MAX_ROWS = 10_000
 EMPTY_IS_FAILURE = True
 SEED = 42
-CONCURRENCY = 16
+CONCURRENCY = 48
 TAU = 2  # placeholder until the tune sweep. Restart the service after changing it.
 
 
