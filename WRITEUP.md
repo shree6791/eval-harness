@@ -46,7 +46,7 @@ Natural-language-to-SQL is a crowded market. Our edge is evidence and design, no
 
 - **Measured where it fails.** 350 held-out questions scored against human-written answers by running both queries. No AI grades another AI.
 - **Built for review.** Model agreement does not reliably signal a correct answer, so the workflow keeps the analyst in charge instead of promising full automation.
-- **A measured lever any team can use.** Showing real column values in the prompt added 14 to 16 points of accuracy to both models, with no fine-tuning and no bigger model.
+- **A measured lever any team can use.** Showing real column values in the prompt added 16 to 17 points of accuracy to both models, with no fine-tuning and no bigger model.
 - **Open models, no lock-in.** Everything runs on open models through Fireworks. The first-pass model was swapped mid-event with a one-line change.
 - **A known path to the next gain.** On 88% of test questions, at least one generated draft is already correct; the best setup picks the right one 76% of the time.
 
@@ -54,13 +54,13 @@ Natural-language-to-SQL is a crowded market. Our edge is evidence and design, no
 
 | What we changed | Before | After |
 | --- | --- | --- |
-| Real column values in the prompt, NVIDIA Nemotron 3 Ultra alone | 28.1% | **41.9% (+13.8 pts)** |
-| Real column values in the prompt, Kimi K3 alone | 50.3% | **65.9% (+15.6 pts)** |
+| Real column values in the prompt, NVIDIA Nemotron 3 Ultra alone | 28.1% | **43.8% (+15.7 pts)** |
+| Real column values in the prompt, Kimi K3 alone | 50.3% | **67.5% (+17.2 pts)** |
 | Kimi K3 repairing Nemotron's three drafts vs Kimi K3 alone (all 350 test questions; McNemar p = 0.006) | 68.0% | **75.7% (+7.7 pts)** |
 | First-pass model latency (Nemotron 3.5 Lightning → Nemotron 3 Ultra) | ~6 min per call | **~2 s per call** |
 | Empty or prose replies, 20-question smoke test (output format and reasoning settings) | 72 of 100 | **0 of 100** |
 
-The first two rows compare the same 320 test questions before and after the change, from the first full run.
+The first two rows compare the same 320 test questions before (baseline run) and after the change (complete run).
 
 ![Accuracy, cost and time: baseline vs the complete run vs a data analyst](results/chart_bars.png)
 
@@ -116,7 +116,7 @@ Joseph Mikhail · mikhailj@gmail.com
 - **Analyst cost:** $62.07 per hour, the mean wage for operations research analysts in the San Jose-Sunnyvale-Santa Clara metro (BLS OEWS, May 2025; $129,110 a year). BLS has no separate data analyst code; this is the closest analyst role.
 - **Assumed:** 30 minutes for an analyst to write a query, 10 minutes to review a draft, and a multi-day queue today. Savings depend on the ratio of review time to write time, not on the wage.
 - **Draft + review:** cascade cost per question at τ = 3, plus 10 minutes of review on every question, plus 30 minutes of rewriting on the 36.6% the cascade gets wrong. Analyst time: 10 + 0.366 × 30 = 21 minutes.
-- **Two full runs:** the full results table and the repair row come from the second, complete run (500 questions, 0 failed calls; 4 Kimi K3 replies cut off at 32,768 tokens count as wrong). The first run lost 53 test repair calls to the Fireworks spending limit; it supplies the before/after rows for real column values. The charts compare the baseline with the complete run on the 320 test questions both runs answered.
+- **Which run:** every result comes from the second, complete run (500 questions, 0 failed calls; 4 Kimi K3 replies cut off at 32,768 tokens count as wrong). The before/after rows and the charts compare the baseline run with the complete run on the 320 test questions both answered. An earlier full run lost 53 test repair calls to the Fireworks spending limit and is not used.
 - **Benchmark comparability:** the 2026-10-28 question file is mostly the hardest tier (460 of 500 questions are challenging), so scores are not comparable to the published BIRD leaderboard.
 - **Cascade:** a cheap model answers first and a stronger model handles only the questions the cheap model is unsure about.
 - **τ (tau):** the number of Nemotron's three drafts that must return the same rows for the answer to be kept without escalation.
