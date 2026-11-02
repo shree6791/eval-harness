@@ -2,7 +2,7 @@
 
 ## Project name
 
-FirstDraft: Nemotron-first text-to-SQL, analyst-approved
+Countersign: SQL drafted by Nemotron, signed off by analysts.
 
 ## Overview
 
