@@ -1,6 +1,6 @@
-# FirstDraft
+# Countersign
 
-Nemotron-first text-to-SQL, analyst-approved. Repository: `eval-harness`.
+SQL drafted by Nemotron, signed off by analysts. Repository: `eval-harness`.
 
 Fireworks, Microsoft, and NVIDIA buildathon. 2 November 2026, San Francisco.
 

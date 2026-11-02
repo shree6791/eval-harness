@@ -12,7 +12,7 @@ Countersign: SQL drafted by Nemotron, signed off by analysts.
 
 Business decisions wait on data questions, and those questions wait on a small team of analysts who write SQL.
 
-- Business users wait days in a queue; many questions never get asked.
+- Business users wait in an analyst queue, and low-priority questions often go unanswered.
 - Analysts spend skilled hours on routine queries instead of analysis.
 - AI alone is not safe to act on: the best single model is wrong on one question in three, with no signal of which.
 
@@ -28,7 +28,7 @@ A user asks in plain English and gets a working SQL query with results, drafted 
 
 ### What it delivers
 
-| Per question | Analyst today | FirstDraft + analyst review |
+| Per question | Analyst today | Countersign + analyst review |
 | --- | --- | --- |
 | Time to an answer | Days | **Seconds to draft, minutes to approve** |
 | Analyst time | 30 min | **21 min (43% more questions per analyst)** |
