@@ -58,7 +58,7 @@ const card = (slide, x, y, w, h, name) =>
     txt(s, small, { x, y: 5.6, w: 3.8, h: 0.5, fontSize: 16, color: C.background2 });
   });
   txt(s, "Evaluated on BIRD Mini-Dev (500 business questions, 11 real databases) · Fireworks, Microsoft and NVIDIA buildathon · San Francisco · 2 November 2026", { x: 0.7, y: 6.75, w: 11.9, h: 0.35, fontSize: 12, color: C.accent4 });
-  s.addNotes("Countersign turns a plain-English business question into a working SQL query. NVIDIA Nemotron drafts it, Kimi K3 repairs it, and an analyst signs off. The headline: analysts answer 43% more questions at 30% lower cost per answer, and real column values in the prompt added up to 17 points of accuracy.");
+  s.addNotes("[Joseph] Hi, we're Joseph and Shree, and this is Countersign. A business user asks a question in plain English and gets a working SQL query back in seconds: drafted by NVIDIA Nemotron, repaired by Kimi K3, and signed off by an analyst.");
 }
 
 // 2. Problem and product
@@ -87,10 +87,51 @@ const card = (slide, x, y, w, h, name) =>
     txt(s, head, { x: 7.2, y: y - 0.02, w: 5.5, h: 0.36, fontSize: 17, bold: true, color: C.text1 });
     txt(s, sub, { x: 7.2, y: y + 0.32, w: 5.5, h: 0.32, fontSize: 14, color: C.text2 });
   });
-  s.addNotes("The problem: business questions queue behind a small analyst team, and fully automatic AI is wrong about one time in three without saying which. Countersign: Nemotron drafts three queries with real column values in the prompt, a free check runs them on the database, Kimi K3 repairs disagreements, and the analyst signs off.");
+  s.addNotes("[Joseph] Today those questions wait days for an analyst. And AI alone isn't safe: the best model is wrong one time in three, without saying which. So Nemotron writes three drafts using real column values, we run them on the live database, and Kimi K3 repairs them.");
 }
 
-// 3. Results
+// 3. One question, start to finish (test question 346, from rows.pkl)
+{
+  const s = pres.addSlide({ masterName: "CONTENT" });
+  s.addText("Three drafts agreed. All three were wrong.", { placeholder: "title" });
+  txt(s, [
+    { text: "Test question 346: ", options: { color: C.text2 } },
+    { text: "“How many superheroes have an alignment that is neither good nor bad?”", options: { bold: true, color: C.text1 } },
+  ], { x: 0.6, y: 1.2, w: 12.1, h: 0.5, fontSize: 16 });
+
+  const mono = { fontFace: "Consolas", fontSize: 13 };
+  // Nemotron drafts
+  card(s, 0.6, 1.95, 7.2, 2.65, "drafts card");
+  txt(s, "NVIDIA Nemotron 3 Ultra: 3 drafts, all agree", { x: 0.9, y: 2.1, w: 6.7, h: 0.4, fontSize: 17, bold: true, color: C.text1 });
+  txt(s, [
+    { text: "SELECT COUNT(*) FROM superhero s", options: { breakLine: true } },
+    { text: "JOIN alignment a ON s.alignment_id = a.id", options: { bold: true, color: C.accent2, breakLine: true } },
+    { text: "WHERE a.alignment NOT IN ('Good', 'Bad')" },
+  ], { x: 0.9, y: 2.6, w: 6.7, h: 1.05, color: C.text1, valign: "top", ...mono });
+  txt(s, "Draft 1 → 28 ✗     Draft 2 → 28 ✗     Draft 3 → 28 ✗", { x: 0.9, y: 3.85, w: 6.7, h: 0.45, fontSize: 16, bold: true, color: C.text2 });
+  // Kimi alone
+  card(s, 0.6, 4.75, 7.2, 1.15, "kimi alone card");
+  txt(s, "Kimi K3 on its own", { x: 0.9, y: 4.88, w: 6.7, h: 0.4, fontSize: 17, bold: true, color: C.text1 });
+  txt(s, "Same inner join → 28 ✗  (drops 6 heroes with no alignment)", { x: 0.9, y: 5.3, w: 6.7, h: 0.45, fontSize: 15, color: C.text2 });
+  // Arrow and repair
+  s.addShape(pres.shapes.RIGHT_ARROW, { x: 7.88, y: 3.15, w: 0.42, h: 0.5, fill: { color: C.accent2 }, line: { color: C.accent2 }, objectName: "arrow" });
+  s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x: 8.4, y: 1.95, w: 4.3, h: 3.95, rectRadius: 0.12, fill: { color: C.accent1 }, line: { color: C.accent1 }, objectName: "repair card" });
+  txt(s, "Kimi K3 repair", { x: 8.7, y: 2.1, w: 3.8, h: 0.4, fontSize: 19, bold: true, color: C.accent6 });
+  txt(s, "sees all 3 drafts and what each returned", { x: 8.7, y: 2.5, w: 3.8, h: 0.35, fontSize: 14, color: C.background2 });
+  txt(s, [
+    { text: "SELECT COUNT(*) FROM superhero s", options: { breakLine: true } },
+    { text: "LEFT JOIN alignment a", options: { bold: true, color: C.accent6, breakLine: true } },
+    { text: "  ON s.alignment_id = a.id", options: { breakLine: true } },
+    { text: "WHERE a.alignment IS NULL", options: { bold: true, color: C.accent6, breakLine: true } },
+    { text: "  OR a.alignment NOT IN ('Good', 'Bad')" },
+  ], { x: 8.7, y: 3.05, w: 3.85, h: 1.65, color: C.background1, valign: "top", fontFace: "Consolas", fontSize: 12 });
+  txt(s, "→ 34 ✓ correct", { x: 8.7, y: 4.9, w: 3.8, h: 0.75, fontSize: 36, bold: true, color: C.accent6, fontFace: THEME.headFontFace });
+
+  txt(s, "Agreement is not proof: when all three drafts agree (53% of test questions), they are right only 53% of the time. That is why the analyst signs off.", { x: 0.6, y: 6.15, w: 12.1, h: 0.7, fontSize: 17, bold: true, color: C.accent1, valign: "middle" });
+  s.addNotes("[Joseph] Here's a real test question: how many superheroes are neither good nor bad? All three drafts agree: 28. Kimi on its own: also 28. All wrong, because the join silently drops six heroes. Shown the three drafts, Kimi switches to a left join and gets 34, the right answer. Agreement isn't proof, so an analyst always signs off. Shree?");
+}
+
+// 4. Results
 {
   const s = pres.addSlide({ masterName: "CONTENT" });
   s.addText("Cascade wins: 75.7% vs 68.0% for Kimi K3 alone", { placeholder: "title" });
@@ -113,10 +154,10 @@ const card = (slide, x, y, w, h, name) =>
   txt(s, "+7.7 pts", { x: 8.2, y: 4.45, w: 4.3, h: 0.9, fontSize: 44, bold: true, color: C.accent1, fontFace: THEME.headFontFace });
   txt(s, "cascade over Kimi K3 alone, statistically significant (p = 0.006), at three times the cost", { x: 8.2, y: 5.35, w: 4.3, h: 1.1, fontSize: 15, color: C.text1, valign: "top" });
   txt(s, "τ chosen on 150 separate questions, reported on the other 350. This question file is mostly the hardest tier, so scores are not comparable to the public BIRD leaderboard.", { x: 0.6, y: 6.7, w: 12.1, h: 0.4, fontSize: 11, color: C.text2 });
-  s.addNotes("We scored everything on BIRD Mini-Dev: 500 real business questions over 11 real databases, each with a human-written answer query. An answer counts only if our query returns the same rows. The cascade, where Nemotron writes three drafts and Kimi K3 repairs them, reaches 75.7%, beating Kimi K3 alone at 68.0% and Nemotron alone at 43.4%; the gap over Kimi is statistically significant. Showing real column values in the prompt added 16 to 17 points to both models.");
+  s.addNotes("[Shree] Thanks. We didn't just demo this, we measured it. BIRD Mini-Dev: 500 real business questions over 11 databases, each with a human-written answer. An answer counts only if our query returns the same rows, so no AI grades AI. We tuned on 150 questions and report on the other 350. The cascade reaches 75.7%, versus 68% for Kimi alone, a statistically significant gap. Just showing the models real column values added 16 to 17 points.");
 }
 
-// 4. Business value and differentiation
+// 5. Business value, stack and next
 {
   const s = pres.addSlide({ masterName: "CONTENT" });
   s.addText("43% more capacity, no one replaced", { placeholder: "title" });
@@ -133,40 +174,20 @@ const card = (slide, x, y, w, h, name) =>
   ], { x: 0.6, y: 1.55, w: 6.6, colW: [1.7, 2.0, 2.9], fontSize: 15, color: C.text1, border: { type: "solid", pt: 0.75, color: HEX.lt2 }, rowH: 0.62, valign: "middle", margin: 0.08 });
   txt(s, "Analyst at $62.07/h (BLS, San Jose metro, May 2025). Assumed: 30 min to write, 10 min to review.", { x: 0.6, y: 4.85, w: 6.6, h: 0.5, fontSize: 11, color: C.text2 });
 
-  txt(s, "Why this is different", { x: 7.7, y: 1.5, w: 5.0, h: 0.5, fontSize: 22, bold: true, color: C.accent2, fontFace: THEME.headFontFace });
-  const diffs = [
-    ["Measured, not demoed", "350 held-out questions, scored by running the SQL"],
-    ["Built for review", "agreement does not signal correctness, so the analyst signs"],
-    ["No lock-in", "open models on Fireworks; first-pass model swapped in one line"],
-    ["Clear next gain", "a correct draft exists for 88% of questions; our best setup is right on 76%"],
+  txt(s, "Built on NVIDIA and Fireworks", { x: 7.7, y: 1.5, w: 5.0, h: 0.5, fontSize: 22, bold: true, color: C.accent2, fontFace: THEME.headFontFace });
+  const items = [
+    ["NVIDIA Nemotron 3 Ultra", "every first draft in ~2 s, under a cent"],
+    ["Fireworks serverless", "both models, one API; we swapped models with one line"],
+    ["Next: 76% → 88%", "a correct draft already exists for 88% of questions; pick it"],
   ];
-  diffs.forEach(([head, sub], i) => {
+  items.forEach(([head, sub], i) => {
     const y = 2.15 + i * 1.12;
-    circle(s, 7.7, y + 0.05, 0.5, "✓", C.accent1, `diff ${i + 1}`);
+    circle(s, 7.7, y + 0.05, 0.5, String(i + 1), C.accent1, `item ${i + 1}`);
     txt(s, head, { x: 8.4, y, w: 4.3, h: 0.38, fontSize: 17, bold: true, color: C.text1 });
     txt(s, sub, { x: 8.4, y: y + 0.4, w: 4.3, h: 0.6, fontSize: 14, color: C.text2, valign: "top" });
   });
-  s.addNotes("The analyst still approves every answer, so accuracy stays at 100%. Reviewing a working draft is faster than writing from scratch: 21 minutes instead of 30, so the same analysts answer 43% more questions at 30% lower cost. Text-to-SQL is crowded; our edge is that we measured where it fails and built the workflow around review.");
-}
-
-// 5. Stack and next
-{
-  const s = pres.addSlide({ masterName: "DARK" });
-  s.addText("Built on NVIDIA and Fireworks", { placeholder: "title" });
-  s.addText("github.com/shree6791/eval-harness", { placeholder: "body" });
-  const cols = [
-    ["NVIDIA Nemotron 3 Ultra", "Writes every first draft in ~2 s at under a cent; answers 53% of questions without escalation"],
-    ["Fireworks serverless", "Both models behind one API, billed per token, no GPUs to manage; three drafts per question stay affordable"],
-    ["What's next", "Pick the right draft (76% → 88%), cheaper repair, self-serve for routine questions, beyond SQL"],
-  ];
-  cols.forEach(([head, body], i) => {
-    const x = 0.7 + i * 4.1;
-    s.addShape(pres.shapes.ROUNDED_RECTANGLE, { x, y: 3.6, w: 3.8, h: 2.15, rectRadius: 0.12, fill: { color: C.accent1 }, line: { color: C.accent1 }, objectName: `stack card ${i + 1}` });
-    txt(s, head, { x: x + 0.3, y: 3.85, w: 3.2, h: 0.5, fontSize: 19, bold: true, color: C.accent6 });
-    txt(s, body, { x: x + 0.3, y: 4.45, w: 3.2, h: 1.2, fontSize: 15, color: C.background1, valign: "top" });
-  });
-  txt(s, "Team: Shreenidhi Sudhakar · Joseph Mikhail", { x: 0.7, y: 6.75, w: 11.9, h: 0.35, fontSize: 12, color: C.accent4 });
-  s.addNotes("NVIDIA Nemotron 3 Ultra is the workhorse: every first draft, in about two seconds, at under a cent. Fireworks serverless makes three drafts per question affordable and let us swap models mid-event. Next: a selector to pick the right draft, since a correct one already exists for 88% of questions.");
+  txt(s, "github.com/shree6791/eval-harness · Team: Shreenidhi Sudhakar · Joseph Mikhail", { x: 0.6, y: 6.6, w: 11.5, h: 0.35, fontSize: 13, color: C.text2 });
+  s.addNotes("[Shree] For the business: analysts still approve every answer, but reviewing a draft takes 21 minutes instead of 30. Same team, 43% more questions, 30% lower cost, and no one replaced. It runs on NVIDIA Nemotron and Fireworks serverless, and since a correct draft already exists for 88% of questions, picking it is our next gain. Thank you.");
 }
 
 (async () => {
