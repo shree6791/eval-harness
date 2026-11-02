@@ -6,9 +6,13 @@ Fireworks, Microsoft, and NVIDIA buildathon. 2 November 2026, San Francisco.
 
 The brief: take open models and make a frontier on a task you define. Deploy it, evaluate it, measure the tradeoffs, tune one dimension against a baseline, and show the business value.
 
-**Task.** Turn a plain-English business question into a database query. Analysts wait days on a data engineer for this.
+**Task.** Turn a plain-English business question into a database query. Business users wait days for an analyst, and analysts spend skilled hours on routine SQL.
 
-**Approach.** A cheap model answers three times. A free check compares the result sets. A large model repairs only the questions that check rejects. The aim is large-model accuracy at a fraction of large-model cost.
+**Approach.** NVIDIA Nemotron 3 Ultra drafts three queries, with real column values from the database in the prompt. A free check compares the result sets. Kimi K3 repairs the questions that check rejects. An analyst approves the draft instead of writing from a blank page.
+
+**Results (test set).** Real column values in the prompt raised NVIDIA Nemotron 3 Ultra from 28.1% to 41.9% and Kimi K3 from 50.3% to 65.9% on the same 320 questions. Draft + analyst review cuts analyst time per question from 30 to 22 minutes (assumed write and review times), so the same analysts answer 36% more questions. Full write-up: [`WRITEUP.md`](WRITEUP.md).
+
+![Accuracy, cost and time: baseline vs final vs a data analyst](results/chart_bars.png)
 
 ## How this meets the brief
 
@@ -43,7 +47,7 @@ Prices are dollars per 1 million tokens, input / output.
 | Large | `accounts/fireworks/models/kimi-k3` | 3.00 / 15.00 |
 | Large backup | `accounts/fireworks/models/glm-5p3` | 1.40 / 4.40 |
 
-Both cheap IDs are listed for serverless shutdown on 7 November 2026. They stay in place for event day. Confirm each model with one live call before the scored run. Record any switch in `CHANGELOG.md`.
+The cheap backup (`gpt-oss-120b`) and the original cheap model (`nemotron-lightning-3p5-30b-a3b`, replaced on event day) are listed for serverless shutdown on 7 November 2026. Confirm each model with one live call before a scored run. Record any switch in `CHANGELOG.md`.
 
 ## Setup
 
