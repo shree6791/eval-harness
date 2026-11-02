@@ -1,60 +1,40 @@
-# Write-up
+$ PROJECT.NAME
+Nemotron-First SQL Cascade
 
-Fill every blank from the 350-question test set unless the sentence says otherwise. Numbers freeze at 3:45 PT. Nothing measured after that goes on a slide.
+$ PROJECT.README
+Turn a plain-English business question into a database query: cheap-model cost, close to large-model accuracy.
 
-## The task
+Analysts wait days on a data engineer for this. Our cascade answers in seconds.
 
-Turning plain-English business questions into database queries. Analysts wait days on a data engineer for this.
+How it works
+- NVIDIA Nemotron 3 Ultra (reasoning off, on Fireworks) writes three SQLite queries for the question. The prompt shows the schema with real example values from each column, so the model matches stored formats instead of guessing them.
+- Each query runs read-only against the real database. If at least τ of the three return the same rows, we keep that answer.
+- If they disagree, crash, time out or return nothing, Kimi K3 sees the question, the schema and all three attempts with what each one returned, and writes one corrected query.
+- The check costs nothing extra: no judge model, just comparing result sets.
 
-## What we deployed
+How we scored it
+- BIRD Mini-Dev: 500 questions over 11 real SQLite databases, each with a reference query. We use the 2026-10-28 SQLite question file, which is mostly challenging questions (460 of 500), so scores are not comparable to the published BIRD leaderboard. Every setup is scored on the same questions.
+- Execution accuracy: run our query and the reference, compare result sets (order and duplicates ignored, floats rounded to 6 places). No AI grader.
+- τ tuned on 150 questions, reported on the other 350.
+- Negative control: the grader passes the reference against itself 20/20 and fails deliberately broken SQL 0/20 (wrong filter, extra column, another question's query).
 
-A cheap open model (Nemotron 3 Ultra, reasoning off) and a large one (Kimi K3) on Fireworks serverless, behind a service running the chain: the cheap model answers three times, an automatic checker compares the results, and the large model repairs only what the checker rejects. Live at ____.
+Results (test set, n = 350)
+- Nemotron 3 Ultra alone: __% accurate, $__ per 1,000 questions
+- Kimi K3 alone: __% accurate, $__ per 1,000 questions
+- Cascade at τ = __: __% accurate, $__ per 1,000 questions, __% escalated to Kimi
+- Cost per correct answer: $__ (cascade) vs $__ (Kimi alone)
+- Median time to answer: __ s
 
-## How we scored it
+Live demo: ____
+Code: https://github.com/shree6791/eval-harness
 
-BIRD Mini-Dev: 500 real questions over 11 real databases, each with a reference query. We run ours, run the reference, and compare result sets with BIRD's own rule. No AI grader. Tuned on 150 questions, reported on the other 350. The question file is the 2026-10-28 Mini-Dev SQLite update: mostly challenging (460 of 500) and almost entirely new questions, so scores here are not comparable to published BIRD Mini-Dev or leaderboard numbers. All setups are compared on the same questions. Floats are rounded to 6 places before comparing.
+$ PROJECT.STACK
+Fireworks.ai: serverless inference for NVIDIA Nemotron 3 Ultra (cheap tier) and Kimi K3 (repair tier) through the OpenAI-compatible API
+Microsoft: ____
+NVIDIA: Nemotron 3 Ultra (NVFP4) as the first-pass model
+other stack: Python, SQLite, FastAPI and Uvicorn (live /ask page), NumPy, SciPy and Matplotlib (scoring, bootstrap intervals, McNemar test, chart)
+anything else you used: BIRD Mini-Dev benchmark (birdsql/bird_mini_dev on Hugging Face)
 
-## The checker
-
-Three cheap answers that return the same rows are kept. Disagreement, a crash, a timeout, or an empty result escalates. The checker costs nothing but the cheap samples and needs no judge model. The obvious alternative, escalating only when the query fails to run, sits on the chart below ours: most wrong SQL runs fine and returns the wrong rows.
-
-## What we tuned
-
-One number, τ: how many of the three cheap answers must agree. Five settings give five points; cheap alone and large alone sit at the ends of the same curve.
-
-## Business value
-
-$____ per correct answer vs. $____ for the large model alone. ____ s median to an answer vs. days. ____% answered correctly with no human.
-
-Cost per correct answer = ($ per question) ÷ (accuracy).
-
-## How far we pushed it
-
-Knee at τ = __. Past it, extra cost buys ____ points. The ceiling is below 100%: ____% of reference queries fail or are wrong on inspection, so ____% is the practical limit and the cascade is ____ points from it.
-
-## What we broke
-
-Against the large model alone: fixed __, broke __ (McNemar exact test, p = ____). Example broken question: ____.
-
-## Why the numbers hold
-
-Re-running an identical setup moves the score by ±__ points (model wobble). Changing which questions are in the set moves it by ±__ on 350 (sampling error, the larger one). Comparisons are paired, question by question. The grader passes the reference against itself 20/20 and fails deliberately wrong SQL 0/20.
-
-## Results table (test set, n = 350)
-
-| Setup | Accuracy % (95% CI) | % escalated | $ / 1k questions | p50 / p95 kept, ms | p50 / p95 escalated, ms |
-| --- | --- | --- | --- | --- | --- |
-| Cheap model alone | ____ (–) | 0 | ____ | ____ / ____ | – |
-| Large model alone | ____ (–) | 100 | ____ | – | ____ / ____ |
-| Executability gate | ____ (–) | ____ | ____ | ____ / ____ | ____ / ____ |
-| Agreement cascade, τ = __ | ____ (–) | ____ | ____ | ____ / ____ | ____ / ____ |
-
-Chart: `chart_test.png`.
-
-## Slides
-
-1. Task. Who currently waits for answers, and for how long.
-2. Architecture. The cascade, and why agreement beats executability.
-3. The curve. The chart in large fonts, with a one-sentence summary.
-4. Trust. Two uncertainties, fixed/broke with p-value, negative control, ceiling.
-5. Generalisation. Any output with a cheap deterministic check: SQL that must run, JSON that must validate, code that must compile, a tool call that must bind.
+$ TEAM.ROSTER
+Shreenidhi Sudhakar · shree6791@gmail.com · LEAD
+Joseph Mikhail · mikhailj@gmail.com
