@@ -1,5 +1,6 @@
+// Build: cd presentation && node build_deck.js  (needs pptxgenjs: npm install pptxgenjs)
 const pptxgen = require("pptxgenjs");
-const { applyTheme } = require(process.env.APPLY_THEME_JS || "./apply_theme.js");
+const { applyTheme } = require("./apply_theme.js");
 
 const THEME = {
   name: "Countersign (Roper palette)",
