@@ -66,26 +66,16 @@ The first two rows compare the same 320 test questions before (baseline run) and
 
 Full results on the test set (n = 350):
 
-| Setup | Accuracy | 95% CI | Cost per 1,000 questions | Cost per correct answer | Median time |
-| --- | --- | --- | --- | --- | --- |
-| NVIDIA Nemotron 3 Ultra alone | 43.4% | 38.3–48.6 | $2.54 | $0.006 | 2.1 s |
-| Kimi K3 alone | 68.0% | 63.1–72.9 | $32.41 | $0.048 | 15.0 s |
-| Cascade, τ = 3, 47% escalated to Kimi K3 | 63.4% | 58.3–68.3 | $44.61 | $0.070 | 7.1 s |
-| Cascade, τ = 4, every question repaired by Kimi K3 (highest tune accuracy) | **75.7%** | 71.1–80.3 | $98.58 | $0.130 | 43.9 s |
-
-Intervals are 95% bootstrap intervals over the 350 test questions. Nemotron alone and Kimi K3 alone do not overlap, and τ = 4 beats Kimi K3 alone in a paired test: 59 questions fixed, 32 broken, McNemar p = 0.006.
+| Setup | Accuracy | Cost per 1,000 questions | Cost per correct answer | Median time |
+| --- | --- | --- | --- | --- |
+| NVIDIA Nemotron 3 Ultra alone | 43.4% | $2.54 | $0.006 | 2.1 s |
+| Kimi K3 alone | 68.0% | $32.41 | $0.048 | 15.0 s |
+| Cascade, τ = 3, 47% escalated to Kimi K3 | 63.4% | $44.61 | $0.070 | 7.1 s |
+| Cascade, τ = 4, every question repaired by Kimi K3 (highest tune accuracy) | **75.7%** | $98.58 | $0.130 | 43.9 s |
 
 τ = 4 is the most accurate setup, 7.7 points above Kimi K3 alone, at three times its cost: Kimi reasons about twice as long when repairing three drafts as when answering cold. τ = 3 is the balanced setting the review workflow uses.
 
 ![Accuracy vs cost for every setting of τ](results/chart_compare.png)
-
-### When the drafts agree, are they right?
-
-When all three Nemotron drafts return the same rows (53% of test questions), they are right only 53% of the time, so agreement alone cannot certify an answer. That is why every answer goes to an analyst for review. The repair helps most where Nemotron does worst: when all three drafts fail, it gets 75% right against 38% for Kimi K3 answering cold.
-
-### One question, start to finish
-
-Test question 346 asks how many superheroes have an alignment that is neither good nor bad. All three Nemotron drafts and Kimi K3 on its own use an inner join and answer 28, silently dropping the six heroes with no alignment. Shown the three matching drafts and told they can still be wrong, the Kimi K3 repair switches to a left join and returns the correct 34. It is one of 59 test questions the repair fixed over Kimi K3 alone.
 
 ### How we proved it
 
