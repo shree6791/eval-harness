@@ -1,7 +1,9 @@
-$ PROJECT.NAME
+# Write-up
+
+## Project name
 Nemotron-First SQL Cascade
 
-$ PROJECT.README
+## Overview
 Turn a plain-English business question into a database query: cheap-model cost, close to large-model accuracy.
 
 Business teams send every data question to an analyst, and analysts spend a large share of their week writing routine SQL instead of analyzing. Our cascade drafts the query in under a minute: NVIDIA Nemotron writes three attempts, and Kimi K3 repairs them. The analyst reviews a draft instead of writing from scratch. The answer is just as correct, about 31% cheaper, and arrives in minutes instead of days.
@@ -28,13 +30,13 @@ Results (test set, n = 350)
 Live demo: ____
 Code: https://github.com/shree6791/eval-harness
 
-$ PROJECT.STACK
+## Tech stack
 Fireworks.ai: serverless inference for NVIDIA Nemotron 3 Ultra (cheap tier) and Kimi K3 (repair tier) through the OpenAI-compatible API
 Microsoft: ____
 NVIDIA: Nemotron 3 Ultra (NVFP4) as the first-pass model
 other stack: Python, SQLite, FastAPI and Uvicorn (live /ask page), NumPy, SciPy and Matplotlib (scoring, bootstrap intervals, McNemar test, chart)
 anything else you used: BIRD Mini-Dev benchmark (birdsql/bird_mini_dev on Hugging Face)
 
-$ TEAM.ROSTER
+## Team
 Shreenidhi Sudhakar · shree6791@gmail.com · LEAD
 Joseph Mikhail · mikhailj@gmail.com
