@@ -112,31 +112,56 @@ def score(rows):
     return res
 
 
-def bars(scored, tau, split, n, out):
-    """Four panels: accuracy, $ per 1,000, $ per correct, median seconds. One bar group per setup."""
+# Human reference. Wage: BLS median for database administrators and architects, May 2025.
+# Minutes per question and turnaround are assumptions; change them with the flags.
+HUMAN_WAGE = 60.94  # $ per hour
+
+
+def bars(scored, tau, split, n, out, human_minutes=30, human_days=2):
+    """Four panels: accuracy, $ per 1,000, $ per correct, median time. Cost and time use log scales
+    because the human reference is several orders of magnitude above the models."""
     setups = ["Nemotron alone", "Kimi K3 alone", f"Cascade tau={tau}"]
     names = {"Nemotron alone": "Nemotron 3 Ultra\nalone", "Kimi K3 alone": "Kimi K3\nalone",
              f"Cascade tau={tau}": "Cascade\n(Nemotron x3 +\nKimi repair)"}
-    panels = [("acc", "Accuracy, %", "{:.1f}%"), ("usd1k", "Cost, $ per 1,000 questions", "${:.2f}"),
-              ("per_correct", "Cost, $ per correct answer", "${:.3f}"), ("p50s", "Median time to answer, s", "{:.1f} s")]
-    fig, axes = plt.subplots(1, 4, figsize=(20, 6))
+    per_q = HUMAN_WAGE * human_minutes / 60
+    human = {"acc": 100.0, "usd1k": per_q * 1000, "per_correct": per_q, "p50s": human_days * 86400}
+    panels = [("acc", "Accuracy, %", "{:.1f}%", False),
+              ("usd1k", "Cost, $ per 1,000 questions (log)", "${:,.2f}", True),
+              ("per_correct", "Cost, $ per correct answer (log)", "${:,.3f}", True),
+              ("p50s", "Median time to answer (log)", None, True)]
+
+    def human_time(v):
+        return f"{v / 86400:.0f} days" if v >= 86400 else f"{v:.1f} s"
+
+    fig, axes = plt.subplots(1, 4, figsize=(22, 6.5))
     width = 0.8 / len(scored)
-    x = np.arange(len(setups))
-    for ax, (key, title, fmt) in zip(axes, panels):
+    x = np.arange(len(setups) + 1)
+    for ax, (key, title, fmt, log) in zip(axes, panels):
+        show = (lambda v: human_time(v)) if fmt is None else fmt.format
         for j, (colour, (name, res)) in enumerate(zip(COLOURS, scored.items())):
             vals = [res[s][key] for s in setups]
-            pos = x + (j - (len(scored) - 1) / 2) * width
+            pos = x[:-1] + (j - (len(scored) - 1) / 2) * width
             bs = ax.bar(pos, vals, width, color=colour, label=name)
             for b, v in zip(bs, vals):
-                ax.annotate(fmt.format(v), (b.get_x() + b.get_width() / 2, b.get_height()),
-                            textcoords="offset points", xytext=(0, 3), ha="center", fontsize=10)
+                ax.annotate(show(v), (b.get_x() + b.get_width() / 2, b.get_height()),
+                            textcoords="offset points", xytext=(0, 3), ha="center", fontsize=9)
+        hb = ax.bar([x[-1]], [human[key]], 0.6, color="#9ca3af", hatch="//", edgecolor="#4b5563",
+                    label="Data engineer (reference)")
+        label = "100%\n(answer key)" if key == "acc" else show(human[key])
+        ax.annotate(label, (x[-1], human[key]), textcoords="offset points", xytext=(0, 3), ha="center", fontsize=9)
+        if log:
+            ax.set_yscale("log")
         ax.set_title(title, fontsize=13)
-        ax.set_xticks(x, [names[s] for s in setups], fontsize=10)
-        ax.margins(y=0.15)
+        ax.set_xticks(x, [names[s] for s in setups] + ["Data engineer\n(human)"], fontsize=10)
+        ax.margins(y=0.2)
         ax.grid(axis="y", alpha=0.3)
-    axes[0].legend(fontsize=11)
+    axes[0].legend(fontsize=10, loc="upper left")
     fig.suptitle(f"BIRD Mini-Dev, {split} split, n = {n}. Cascade at τ = {tau}.", fontsize=15)
-    fig.tight_layout()
+    fig.text(0.5, 0.005, f"Data engineer: BLS May 2025 median wage ${HUMAN_WAGE}/h (database administrators and architects), "
+             f"{human_minutes} min per question and {human_days}-day turnaround assumed. "
+             f"Human accuracy is 100% by definition: the reference queries are the answer key.",
+             ha="center", fontsize=10, color="#4b5563")
+    fig.tight_layout(rect=(0, 0.03, 1, 1))
     fig.savefig(out, dpi=150)
     print(f"bars -> {out}")
 
@@ -150,6 +175,8 @@ def main():
     ap.add_argument("--out", default="chart_compare.png")
     ap.add_argument("--bars-out", default="chart_bars.png")
     ap.add_argument("--tau", type=int, default=4, help="cascade setting shown in the bar charts")
+    ap.add_argument("--human-minutes", type=float, default=30, help="data engineer minutes per question (assumed)")
+    ap.add_argument("--human-days", type=float, default=2, help="data engineer turnaround in days (assumed)")
     a = ap.parse_args()
     if a.export:
         export(*a.export, old_gate=a.old_gate)
@@ -168,7 +195,7 @@ def main():
             esc = f"{m['esc']:.0f}%" if "esc" in m else ""
             print(f"  {setup:16s} {m['acc']:8.1f}% {m['usd1k']:8.2f} {m['per_correct']:10.4f} {m['p50s']:6.1f} {esc:>9s}")
 
-    bars(scored, a.tau, a.split, len(shared), a.bars_out)
+    bars(scored, a.tau, a.split, len(shared), a.bars_out, a.human_minutes, a.human_days)
 
     fig, ax = plt.subplots(figsize=(11, 7))
     for colour, (name, res) in zip(COLOURS, scored.items()):
