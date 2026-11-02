@@ -4,6 +4,8 @@
     python demo.py --tau 4            # same questions, a different threshold
     python demo.py --live             # real Fireworks calls (needs FIREWORKS_API_KEY)
     python demo.py --export rows.pkl  # rebuild demo_cases.json from a full run
+    python demo.py --compare          # baseline prompt vs schema example values
+    python demo.py --export-compare baseline_rows.pkl  # rebuild demo_compare.json
 
 Replay is the default so a recording never depends on Fireworks rate limits.
 """
@@ -175,13 +177,132 @@ async def live(tau):
         print(f"{verdict(correct(pick['res'], gold))}   ${usd:.4f}   {time.monotonic() - t0:.1f} s")
 
 
+COMPARE = Path("demo_compare.json")
+# Tune questions where the baseline prompt's majority answer was wrong.
+COMPARE_QIDS = [196, 472, 471, 57]
+
+
+def _example_lines(ddl, sqls):
+    """Example-value lines for columns the new queries use (max 3)."""
+    used = " ".join(sqls).lower()
+    out = []
+    for line in ddl.splitlines():
+        if line.startswith("--   ") and " (" in line:
+            col = line[5:].split(" (", 1)[0]
+            if col.lower() in used and line not in out:
+                out.append(line[:160])
+    # Category lists ("all values") say the most; ID samples say the least.
+    out.sort(key=lambda s: ("(all values)" not in s, "id (" in s.lower()))
+    return out[:3]
+
+
+def export_compare(rows_path):
+    """Baseline answers from a pre-example-values run vs the current prompt.
+
+    The current-prompt calls come from the cache when present; otherwise they are made live.
+    """
+    import pickle
+
+    from harness.cascade import attach_results, safe_call, schema_for
+    from harness.config import CHEAP, TEMP_A
+    from harness.gate import gate
+    from harness.llm import usd
+    from harness.prompts import cheap_prompt
+    from harness.sql import correct
+
+    rows = {r["qid"]: r for r in pickle.load(open(rows_path, "rb"))}
+    qs = {q["question_id"]: q for q in json.load(open(QUESTIONS))}
+
+    async def build():
+        out = []
+        for qid in COMPARE_QIDS:
+            r, q = rows[qid], qs[qid]
+            db = db_path(q["db_id"])
+            ddl = await schema_for(q["db_id"])
+            new = await asyncio.gather(
+                *[safe_call(CHEAP, cheap_prompt(q, ddl), TEMP_A, sample=i) for i in range(K)]
+            )
+            await attach_results(db, new)
+
+            def side(samples):
+                _, best, agree = gate([s["res"] for s in samples], K + 1)
+                return {
+                    "answers": [label(s["res"]) for s in samples],
+                    "agree": agree,
+                    "pick_sql": samples[best]["sql"],
+                    "ok": correct(samples[best]["res"], r["gold"]),
+                    "usd": sum(usd(s) for s in samples),
+                    "tin": round(sum(s["tin"] for s in samples) / len(samples)),
+                }
+
+            out.append(
+                {
+                    "qid": qid,
+                    "db_id": r["db"],
+                    "question": q["question"],
+                    "gold": label(r["gold"]),
+                    "before": side(r["a"]),
+                    "before_large_alone_ok": correct(r["c"]["res"], r["gold"]),
+                    "before_large_alone_usd": usd(r["c"]),
+                    "after": side(new),
+                    "examples": _example_lines(ddl, [s["sql"] for s in new]),
+                }
+            )
+        return out
+
+    out = asyncio.run(build())
+    COMPARE.write_text(json.dumps(out, indent=1))
+    print(f"{len(out)} cases -> {COMPARE}")
+
+
+def compare(tau):
+    cases = json.loads(COMPARE.read_text())
+    print("Baseline: schema as CREATE TABLE statements only.")
+    print("Now:      schema plus example values from each column (commit 9e71811).")
+    print(f"Same {K} Nemotron 3 Ultra samples per question, same gate, tau = {tau}.")
+    for n, c in enumerate(cases, 1):
+        b, a = c["before"], c["after"]
+        print("=" * 78)
+        print(f"Question {n} of {len(cases)}  [{c['db_id']}]")
+        print(c["question"])
+        print(f"Reference answer: {c['gold']}")
+        for name, s in (("BASELINE", b), ("WITH EXAMPLE VALUES", a)):
+            print()
+            print(f"{name}  (prompt ~{s['tin']:,} tokens)")
+            for i, ans in enumerate(s["answers"], 1):
+                print(f"  Attempt {i} -> {ans}")
+            route = "kept, Kimi not called" if s["agree"] >= tau else "escalated to Kimi K3"
+            print(f"  Agreement {s['agree']}/{K}: {route}. Majority answer: {verdict(s['ok'])}.")
+            if name == "BASELINE" and s["agree"] == K and not s["ok"]:
+                print("  All three agreed on a wrong answer, so the gate could not catch it.")
+            if name == "BASELINE":
+                print(f"  Kimi K3 alone on the baseline prompt: {verdict(c['before_large_alone_ok'])}.")
+        if c["examples"]:
+            print()
+            print("Example values the model now sees:")
+            for line in c["examples"]:
+                print("  " + line.lstrip("- ").strip())
+    print("=" * 78)
+    nb = sum(c["before"]["ok"] for c in cases)
+    na = sum(c["after"]["ok"] for c in cases)
+    print(f"Nemotron majority answer: baseline {nb}/{len(cases)} correct, with example values {na}/{len(cases)}.")
+    print("Chosen from the 7 short tune questions where the baseline majority was wrong; 4 of 7 fixed.")
+    print("Across all questions, see the full-run numbers in WRITEUP.md.")
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--tau", type=int, default=3, help="agreement threshold, 0-4")
     ap.add_argument("--live", action="store_true", help="real Fireworks calls")
     ap.add_argument("--export", metavar="ROWS_PKL", help="rebuild demo_cases.json")
+    ap.add_argument("--compare", action="store_true", help="baseline prompt vs example values")
+    ap.add_argument("--export-compare", metavar="BASELINE_ROWS_PKL", help="rebuild demo_compare.json")
     a = ap.parse_args()
-    if a.export:
+    if a.export_compare:
+        export_compare(a.export_compare)
+    elif a.compare:
+        compare(a.tau)
+    elif a.export:
         export(a.export)
     elif a.live:
         asyncio.run(live(a.tau))

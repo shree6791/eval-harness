@@ -1,0 +1,150 @@
+[
+ {
+  "qid": 196,
+  "db_id": "financial",
+  "question": "Among south Bohemia districts, in the one with the largest population, what percentage of resident clients are male? Round to two decimals.",
+  "gold": "1 row(s): (40.0,)",
+  "before": {
+   "answers": [
+    "1 row(s): (0.0,)",
+    "1 row(s): (0.0,)",
+    "1 row(s): (0.0,)"
+   ],
+   "agree": 3,
+   "pick_sql": "WITH south_bohemia_districts AS (\n    SELECT district_id, A2 AS district_name, A13 AS population\n    FROM district\n    WHERE A3 = 'south Bohemia'\n),\nmax_population_district AS (\n    SELECT district_id\n    FROM south_bohemia_districts\n    ORDER BY population DESC\n    LIMIT 1\n),\nclient_gender_counts AS (\n    SELECT\n        SUM(CASE WHEN gender = 'male' THEN 1 ELSE 0 END) AS male_count,\n        COUNT(*) AS total_count\n    FROM client\n    WHERE district_id = (SELECT district_id FROM max_population_district)\n)\nSELECT\n    ROUND((CAST(male_count AS REAL) / total_count) * 100, 2) AS male_percentage\nFROM client_gender_counts",
+   "ok": false,
+   "usd": 0.0025044000000000004,
+   "tin": 738
+  },
+  "before_large_alone_ok": true,
+  "before_large_alone_usd": 0.010035,
+  "after": {
+   "answers": [
+    "1 row(s): (40.0,)",
+    "1 row(s): (40.0,)",
+    "1 row(s): (40.0,)"
+   ],
+   "agree": 3,
+   "pick_sql": "WITH south_bohemia_districts AS (\n    SELECT district_id, A4 AS population\n    FROM district\n    WHERE A3 = 'south Bohemia'\n),\nlargest_district AS (\n    SELECT district_id\n    FROM south_bohemia_districts\n    ORDER BY CAST(population AS INTEGER) DESC\n    LIMIT 1\n),\nresident_clients AS (\n    SELECT gender\n    FROM client\n    WHERE district_id IN (SELECT district_id FROM largest_district)\n)\nSELECT ROUND(\n    100.0 * SUM(CASE WHEN gender = 'M' THEN 1 ELSE 0 END) / COUNT(*),\n    2\n) AS male_percentage\nFROM resident_clients",
+   "ok": true,
+   "usd": 0.005284199999999999,
+   "tin": 2353
+  },
+  "examples": [
+   "--   gender (all values): 'F', 'M'",
+   "--   A3 (all values): 'Prague', 'central Bohemia', 'south Bohemia', 'west Bohemia', 'north Bohemia', 'east Bohemia', 'south Moravia', 'north Moravia'",
+   "--   A4 (e.g.): '1204953', '88884', '75232'"
+  ]
+ },
+ {
+  "qid": 472,
+  "db_id": "toxicology",
+  "question": "Among carcinogenic molecules, what percentage contain no fluorine atoms? Round to two decimal places.",
+  "gold": "1 row(s): (99.34,)",
+  "before": {
+   "answers": [
+    "1 row(s): (100.0,)",
+    "1 row(s): (100.0,)",
+    "1 row(s): (100.0,)"
+   ],
+   "agree": 3,
+   "pick_sql": "WITH carcinogenic_molecules AS (\n    SELECT molecule_id\n    FROM molecule\n    WHERE label = '+'\n),\ntotal_carcinogenic AS (\n    SELECT COUNT(*) AS total\n    FROM carcinogenic_molecules\n),\nmolecules_with_fluorine AS (\n    SELECT COUNT(DISTINCT a.molecule_id) AS count\n    FROM atom a\n    JOIN carcinogenic_molecules cm ON a.molecule_id = cm.molecule_id\n    WHERE a.element = 'F'\n)\nSELECT ROUND(\n    (total_carcinogenic.total - COALESCE(molecules_with_fluorine.count, 0)) * 100.0 / total_carcinogenic.total,\n    2\n) AS percentage\nFROM total_carcinogenic, molecules_with_fluorine",
+   "ok": false,
+   "usd": 0.0018935999999999998,
+   "tin": 372
+  },
+  "before_large_alone_ok": false,
+  "before_large_alone_usd": 0.006177,
+  "after": {
+   "answers": [
+    "1 row(s): (99.34,)",
+    "1 row(s): (99.34,)",
+    "1 row(s): (99.34,)"
+   ],
+   "agree": 3,
+   "pick_sql": "WITH carcinogenic_molecules AS (\n    SELECT molecule_id\n    FROM molecule\n    WHERE label = '+'\n),\nfluorine_molecules AS (\n    SELECT DISTINCT a.molecule_id\n    FROM atom a\n    JOIN carcinogenic_molecules cm ON a.molecule_id = cm.molecule_id\n    WHERE a.element = 'f'\n)\nSELECT ROUND(\n    (COUNT(cm.molecule_id) - COUNT(fm.molecule_id)) * 100.0 / COUNT(cm.molecule_id),\n    2\n) AS percentage_no_fluorine\nFROM carcinogenic_molecules cm\nLEFT JOIN fluorine_molecules fm ON cm.molecule_id = fm.molecule_id",
+   "ok": true,
+   "usd": 0.002286,
+   "tin": 738
+  },
+  "examples": [
+   "--   element (all values): 'cl', 'c', 'h', 'o', 's', 'n', 'p', 'na', 'br', 'f', 'i', 'sn', 'pb', 'ca', 'zn', 'k', 'cu', 'y'",
+   "--   label (all values): '+', '-'",
+   "--   molecule_id (e.g.): 'TR000', 'TR001', 'TR002'"
+  ]
+ },
+ {
+  "qid": 471,
+  "db_id": "toxicology",
+  "question": "How many distinct iodine atoms and distinct sulfur atoms, respectively, participate in at least one single bond?",
+  "gold": "1 row(s): (3, 77)",
+  "before": {
+   "answers": [
+    "1 row(s): (None, None)",
+    "1 row(s): (0, 0)",
+    "1 row(s): (0, 0)"
+   ],
+   "agree": 2,
+   "pick_sql": "SELECT \n    COUNT(DISTINCT CASE WHEN a.element = 'I' THEN a.atom_id END) AS iodine_count,\n    COUNT(DISTINCT CASE WHEN a.element = 'S' THEN a.atom_id END) AS sulfur_count\nFROM atom a\nJOIN connected c ON a.atom_id = c.atom_id\nJOIN bond b ON c.bond_id = b.bond_id\nWHERE b.bond_type = '-' AND a.element IN ('I', 'S')",
+   "ok": false,
+   "usd": 0.0015396,
+   "tin": 374
+  },
+  "before_large_alone_ok": false,
+  "before_large_alone_usd": 0.006948,
+  "after": {
+   "answers": [
+    "1 row(s): (3, 77)",
+    "1 row(s): (3, 77)",
+    "1 row(s): (3, 77)"
+   ],
+   "agree": 3,
+   "pick_sql": "WITH single_bond_atoms AS (\n    SELECT DISTINCT c.atom_id\n    FROM connected c\n    JOIN bond b ON c.bond_id = b.bond_id\n    WHERE b.bond_type = '-'\n    UNION\n    SELECT DISTINCT c.atom_id2\n    FROM connected c\n    JOIN bond b ON c.bond_id = b.bond_id\n    WHERE b.bond_type = '-'\n)\nSELECT \n    SUM(CASE WHEN a.element = 'i' THEN 1 ELSE 0 END) AS iodine_count,\n    SUM(CASE WHEN a.element = 's' THEN 1 ELSE 0 END) AS sulfur_count\nFROM atom a\nJOIN single_bond_atoms sba ON a.atom_id = sba.atom_id",
+   "ok": true,
+   "usd": 0.002436,
+   "tin": 740
+  },
+  "examples": [
+   "--   element (all values): 'cl', 'c', 'h', 'o', 's', 'n', 'p', 'na', 'br', 'f', 'i', 'sn', 'pb', 'ca', 'zn', 'k', 'cu', 'y'",
+   "--   bond_type (all values): '-', '=', '#'",
+   "--   atom_id2 (e.g.): 'TR000_2', 'TR000_1', 'TR000_3'"
+  ]
+ },
+ {
+  "qid": 57,
+  "db_id": "card_games",
+  "question": "What percentage of cards with format commander and legal status do not have a content warning?",
+  "gold": "1 row(s): (100.0,)",
+  "before": {
+   "answers": [
+    "1 row(s): (None,)",
+    "error: OperationalError: no such column: hasContentWarning",
+    "1 row(s): (0,)"
+   ],
+   "agree": 1,
+   "pick_sql": "WITH commander_cards AS (\n    SELECT c.uuid, c.hasContentWarning\n    FROM cards c\n    JOIN legalities l ON c.uuid = l.uuid\n    WHERE l.format = 'commander' AND l.status = 'legal'\n)\nSELECT \n    CASE \n        WHEN COUNT(*) = 0 THEN 0\n        ELSE ROUND(100.0 * SUM(CASE WHEN hasContentWarning = 0 THEN 1 ELSE 0 END) / COUNT(*), 2)\n    END AS percentage_without_content_warning\nFROM commander_cards",
+   "ok": false,
+   "usd": 0.0027749999999999997,
+   "tin": 1055
+  },
+  "before_large_alone_ok": true,
+  "before_large_alone_usd": 0.011181,
+  "after": {
+   "answers": [
+    "1 row(s): (100.0,)",
+    "1 row(s): (100.0,)",
+    "1 row(s): (100.0,)"
+   ],
+   "agree": 3,
+   "pick_sql": "WITH commander_cards AS (\n    SELECT DISTINCT c.uuid, c.hasContentWarning\n    FROM cards c\n    JOIN legalities l ON c.uuid = l.uuid\n    WHERE l.format = 'commander' AND l.status = 'Legal'\n),\ntotal_commander AS (\n    SELECT COUNT(*) AS total FROM commander_cards\n),\nno_content_warning AS (\n    SELECT COUNT(*) AS count FROM commander_cards WHERE hasContentWarning = 0\n)\nSELECT \n    (no_content_warning.count * 100.0) / total_commander.total AS percentage\nFROM no_content_warning, total_commander",
+   "ok": true,
+   "usd": 0.010967399999999999,
+   "tin": 5633
+  },
+  "examples": [
+   "--   hasContentWarning (all values): 0, 1",
+   "--   format (all values): 'commander', 'duel', 'legacy', 'modern', 'penny', 'premodern', 'vintage', 'gladiator', 'historic', 'pauper', 'pioneer', 'brawl', 'futu",
+   "--   status (all values): 'Legal', 'Banned', 'Restricted'"
+  ]
+ }
+]
