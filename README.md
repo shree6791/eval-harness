@@ -95,3 +95,4 @@ Set `TAU` in `harness/config.py` to the tune-set choice, then restart the servic
 | `harness/service.py` | Live `/ask` API |
 | `harness/config.py` | Models, prices, limits, `TAU` |
 | `passes.py`, `analyze.py`, `serve.py` | Commands above |
+| `demo.py`, `demo_cases.json` | Five-question walkthrough; replays recorded results, `--live` for real calls |

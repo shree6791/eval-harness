@@ -1,0 +1,440 @@
+[
+ {
+  "qid": 53,
+  "db_id": "card_games",
+  "question": "Among all Story Spotlight card printings, what percentage have a French translation? Round to two decimals.",
+  "evidence": "",
+  "gold_sql": "SELECT ROUND(100.0 * (SELECT COUNT(DISTINCT c.uuid) FROM cards AS c JOIN foreign_data AS f ON f.uuid = c.uuid WHERE c.isStorySpotlight = 1 AND f.language = 'French') / NULLIF((SELECT COUNT(*) FROM cards WHERE isStorySpotlight = 1), 0), 2)",
+  "gold": "1 row(s): (83.65,)",
+  "samples": [
+   {
+    "sql": "WITH spotlight AS (\n  SELECT uuid\n  FROM cards\n  WHERE isStorySpotlight = 1\n),\nhas_french AS (\n  SELECT uuid\n  FROM foreign_data\n  WHERE language = 'French'\n)\nSELECT ROUND(\n  100.0 * COUNT(DISTINCT CASE WHEN hf.uuid IS NOT NULL THEN s.uuid END) / COUNT(DISTINCT s.uuid),\n  2\n) AS pct_french\nFROM spotlight s\nLEFT JOIN has_french hf ON s.uuid = hf.uuid",
+    "res": [
+     "ok",
+     [
+      [
+       "83.65"
+      ]
+     ]
+    ],
+    "n_rows": 1,
+    "ok": true,
+    "ms": 1925,
+    "usd": 0.0009048,
+    "sig": "4203795464750809979"
+   },
+   {
+    "sql": "WITH story_spotlight_cards AS (\n    SELECT uuid\n    FROM cards\n    WHERE isStorySpotlight = 1\n),\nstory_spotlight_with_french AS (\n    SELECT DISTINCT c.uuid\n    FROM cards c\n    JOIN foreign_data fd ON c.uuid = fd.uuid\n    WHERE c.isStorySpotlight = 1\n      AND fd.language = 'French'\n)\nSELECT ROUND(\n    (CAST((SELECT COUNT(*) FROM story_spotlight_with_french) AS REAL) / \n     (SELECT COUNT(*) FROM story_spotlight_cards)) * 100, 2\n) AS percentage",
+    "res": [
+     "ok",
+     [
+      [
+       "83.65"
+      ]
+     ]
+    ],
+    "n_rows": 1,
+    "ok": true,
+    "ms": 2626,
+    "usd": 0.0009624,
+    "sig": "4203795464750809979"
+   },
+   {
+    "sql": "WITH story_spotlight_cards AS (\n    SELECT uuid FROM cards WHERE isStorySpotlight = 1\n),\ntotal_printings AS (\n    SELECT COUNT(*) as total FROM story_spotlight_cards\n),\nfrench_printings AS (\n    SELECT COUNT(DISTINCT c.uuid) as count\n    FROM story_spotlight_cards c\n    JOIN foreign_data f ON c.uuid = f.uuid\n    WHERE f.language = 'French'\n)\nSELECT ROUND(CAST(f.count AS REAL) / t.total * 100, 2) as percentage\nFROM french_printings f, total_printings t",
+    "res": [
+     "ok",
+     [
+      [
+       "83.65"
+      ]
+     ]
+    ],
+    "n_rows": 1,
+    "ok": true,
+    "ms": 2638,
+    "usd": 0.0009528,
+    "sig": "4203795464750809979"
+   }
+  ],
+  "repair": {
+   "sql": "SELECT ROUND(\n    100.0 * COUNT(DISTINCT CASE WHEN fd.uuid IS NOT NULL THEN c.uuid END)\n        / COUNT(DISTINCT c.uuid),\n    2\n) AS pct_french\nFROM cards c\nLEFT JOIN foreign_data fd\n    ON fd.uuid = c.uuid AND fd.language = 'French'\nWHERE c.isStorySpotlight = 1",
+   "res": [
+    "ok",
+    [
+     [
+      "83.65"
+     ]
+    ]
+   ],
+   "n_rows": 1,
+   "ok": true,
+   "ms": 20528,
+   "usd": 0.026127,
+   "sig": null
+  },
+  "large_alone": {
+   "sql": "SELECT ROUND(\n    100.0 * SUM(\n        CASE\n            WHEN EXISTS (\n                SELECT 1\n                FROM foreign_data fd\n                WHERE fd.uuid = c.uuid\n                  AND fd.language = 'French'\n            ) THEN 1\n            ELSE 0\n        END\n    ) / COUNT(*),\n    2\n) AS percentage\nFROM cards c\nWHERE c.isStorySpotlight = 1",
+   "res": [
+    "error",
+    "OperationalError: interrupted"
+   ],
+   "n_rows": 0,
+   "ok": false,
+   "ms": 5751,
+   "usd": 0.008835,
+   "sig": null
+  }
+ },
+ {
+  "qid": 118,
+  "db_id": "codebase_community",
+  "question": "What is the display name of the user who last edited the post \"Examples for teaching: Correlation does not mean causation\"?",
+  "evidence": "",
+  "gold_sql": "SELECT T2.DisplayName FROM posts AS T1 INNER JOIN users AS T2 ON T1.LastEditorUserId = T2.Id WHERE T1.Title = 'Examples for teaching: Correlation does not mean causation'",
+  "gold": "1 row(s): ('Abhilash',)",
+  "samples": [
+   {
+    "sql": "SELECT u.DisplayName\nFROM users u\nJOIN posts p ON u.Id = p.LastEditorUserId\nWHERE p.Title = 'Examples for teaching: Correlation does not mean causation'",
+    "res": [
+     "ok",
+     [
+      [
+       "Abhilash"
+      ]
+     ]
+    ],
+    "n_rows": 1,
+    "ok": true,
+    "ms": 1303,
+    "usd": 0.0007116000000000001,
+    "sig": "1342078157518591424"
+   },
+   {
+    "sql": "SELECT u.DisplayName\nFROM posts p\nJOIN users u ON p.LastEditorUserId = u.Id\nWHERE p.Title = 'Examples for teaching: Correlation does not mean causation'",
+    "res": [
+     "ok",
+     [
+      [
+       "Abhilash"
+      ]
+     ]
+    ],
+    "n_rows": 1,
+    "ok": true,
+    "ms": 1062,
+    "usd": 0.0007116000000000001,
+    "sig": "1342078157518591424"
+   },
+   {
+    "sql": "SELECT u.DisplayName\nFROM users u\nJOIN posts p ON p.LastEditorUserId = u.Id\nWHERE p.Title = 'Examples for teaching: Correlation does not mean causation'",
+    "res": [
+     "ok",
+     [
+      [
+       "Abhilash"
+      ]
+     ]
+    ],
+    "n_rows": 1,
+    "ok": true,
+    "ms": 696,
+    "usd": 0.0007116000000000001,
+    "sig": "1342078157518591424"
+   }
+  ],
+  "repair": {
+   "sql": "SELECT u.DisplayName\nFROM posts p\nJOIN users u ON p.LastEditorUserId = u.Id\nWHERE p.Title = 'Examples for teaching: Correlation does not mean causation'",
+   "res": [
+    "ok",
+    [
+     [
+      "Abhilash"
+     ]
+    ]
+   ],
+   "n_rows": 1,
+   "ok": true,
+   "ms": 19155,
+   "usd": 0.02307,
+   "sig": null
+  },
+  "large_alone": {
+   "sql": "SELECT u.DisplayName\nFROM posts AS p\nJOIN users AS u ON p.LastEditorUserId = u.Id\nWHERE p.Title = 'Examples for teaching: Correlation does not mean causation'",
+   "res": [
+    "ok",
+    [
+     [
+      "Abhilash"
+     ]
+    ]
+   ],
+   "n_rows": 1,
+   "ok": true,
+   "ms": 9105,
+   "usd": 0.006315,
+   "sig": null
+  }
+ },
+ {
+  "qid": 57,
+  "db_id": "card_games",
+  "question": "What percentage of cards with format commander and legal status do not have a content warning?",
+  "evidence": "",
+  "gold_sql": "SELECT CAST(SUM(CASE WHEN T1.hasContentWarning = 0 THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(T1.id) FROM cards AS T1 INNER JOIN legalities AS T2 ON T1.uuid = T2.uuid WHERE T2.format = 'commander' AND T2.status = 'Legal'",
+  "gold": "1 row(s): (100.0,)",
+  "samples": [
+   {
+    "sql": "WITH commander_cards AS (\n    SELECT c.uuid\n    FROM cards c\n    JOIN legalities l ON c.uuid = l.uuid\n    WHERE l.format = 'commander' AND l.status = 'legal'\n)\nSELECT \n    ROUND(\n        (SUM(CASE WHEN c.hasContentWarning = 0 THEN 1 ELSE 0 END) * 100.0) / COUNT(*), \n        2\n    ) AS percentage_without_content_warning\nFROM commander_cards cc\nJOIN cards c ON cc.uuid = c.uuid",
+    "res": [
+     "ok",
+     [
+      [
+       "None"
+      ]
+     ]
+    ],
+    "n_rows": 1,
+    "ok": false,
+    "ms": 2422,
+    "usd": 0.0009306,
+    "sig": "empty-0"
+   },
+   {
+    "sql": "WITH legal_cards AS (\n    SELECT c.uuid\n    FROM cards c\n    JOIN legalities l ON c.uuid = l.uuid\n    WHERE l.format = 'commander' AND l.status = 'legal'\n)\nSELECT \n    CASE \n        WHEN COUNT(*) = 0 THEN 0\n        ELSE ROUND(100.0 * SUM(CASE WHEN hasContentWarning = 0 THEN 1 ELSE 0 END) / COUNT(*), 2)\n    END AS percentage_without_content_warning\nFROM legal_cards",
+    "res": [
+     "error",
+     "OperationalError: no such column: hasContentWarning"
+    ],
+    "n_rows": 0,
+    "ok": false,
+    "ms": 2032,
+    "usd": 0.0009113999999999999,
+    "sig": "fail-1"
+   },
+   {
+    "sql": "WITH commander_cards AS (\n    SELECT c.uuid, c.hasContentWarning\n    FROM cards c\n    JOIN legalities l ON c.uuid = l.uuid\n    WHERE l.format = 'commander' AND l.status = 'legal'\n)\nSELECT \n    CASE \n        WHEN COUNT(*) = 0 THEN 0\n        ELSE ROUND(100.0 * SUM(CASE WHEN hasContentWarning = 0 THEN 1 ELSE 0 END) / COUNT(*), 2)\n    END AS percentage_without_content_warning\nFROM commander_cards",
+    "res": [
+     "ok",
+     [
+      [
+       "0"
+      ]
+     ]
+    ],
+    "n_rows": 1,
+    "ok": false,
+    "ms": 2078,
+    "usd": 0.000933,
+    "sig": "6907076272398984591"
+   }
+  ],
+  "repair": {
+   "sql": "SELECT ROUND(\n    100.0 * SUM(CASE WHEN c.hasContentWarning = 0 THEN 1 ELSE 0 END) / COUNT(*),\n    2\n) AS percentage_without_content_warning\nFROM cards c\nJOIN legalities l ON c.uuid = l.uuid\nWHERE l.format = 'commander'\n  AND l.status = 'Legal'",
+   "res": [
+    "ok",
+    [
+     [
+      "100.0"
+     ]
+    ]
+   ],
+   "n_rows": 1,
+   "ok": true,
+   "ms": 15614,
+   "usd": 0.021192,
+   "sig": null
+  },
+  "large_alone": {
+   "sql": "SELECT\n    100.0 * SUM(CASE WHEN c.hasContentWarning = 0 THEN 1 ELSE 0 END) / COUNT(*) AS percentage\nFROM cards AS c\nJOIN legalities AS l\n    ON c.uuid = l.uuid\nWHERE LOWER(l.format) = 'commander'\n  AND LOWER(l.status) = 'legal'",
+   "res": [
+    "ok",
+    [
+     [
+      "100.0"
+     ]
+    ]
+   ],
+   "n_rows": 1,
+   "ok": true,
+   "ms": 8832,
+   "usd": 0.011181,
+   "sig": null
+  }
+ },
+ {
+  "qid": 0,
+  "db_id": "california_schools",
+  "question": "Among schools with a school-level SAT excellence rate above 0.3, what is the highest ages-5-17 free-meal eligibility rate?",
+  "evidence": "SAT excellence rate is the share of test takers scoring at least 1500.",
+  "gold_sql": "SELECT MAX(1.0 * f.`Free Meal Count (Ages 5-17)` / f.`Enrollment (Ages 5-17)`) FROM frpm AS f JOIN satscores AS s ON s.cds = f.CDSCode WHERE s.rtype = 'S' AND s.NumTstTakr > 0 AND f.`Enrollment (Ages 5-17)` > 0 AND 1.0 * s.NumGE1500 / s.NumTstTakr > 0.3",
+  "gold": "1 row(s): (0.9049079754601227,)",
+  "samples": [
+   {
+    "sql": "WITH sat_excellence AS (\n    SELECT\n        cds,\n        CAST(NumGE1500 AS REAL) / NumTstTakr AS excellence_rate\n    FROM satscores\n    WHERE NumTstTakr > 0\n),\neligible_schools AS (\n    SELECT cds\n    FROM sat_excellence\n    WHERE excellence_rate > 0.3\n)\nSELECT MAX(`Percent (%) Eligible Free (Ages 5-17)`)\nFROM frpm\nWHERE CDSCode IN (SELECT cds FROM eligible_schools)",
+    "res": [
+     "ok",
+     [
+      [
+       "0.904907975460123"
+      ]
+     ]
+    ],
+    "n_rows": 1,
+    "ok": true,
+    "ms": 2702,
+    "usd": 0.000936,
+    "sig": "-6402204152875984803"
+   },
+   {
+    "sql": "WITH sat_excellence AS (\n    SELECT\n        s.CDSCode,\n        CAST(s.NumGE1500 AS REAL) / NULLIF(CAST(s.NumTstTakr AS REAL), 0) AS excellence_rate\n    FROM satscores s\n    WHERE s.NumTstTakr > 0\n),\nfiltered_schools AS (\n    SELECT\n        f.CDSCode,\n        CAST(f.`Free Meal Count (Ages 5-17)` AS REAL) / NULLIF(CAST(f.`Enrollment (Ages 5-17)` AS REAL), 0) AS free_meal_rate\n    FROM frpm f\n    WHERE f.`Enrollment (Ages 5-17)` > 0\n)\nSELECT MAX(fs.free_meal_rate)\nFROM filtered_schools fs\nJOIN sat_excellence se ON fs.CDSCode = se.CDSCode\nWHERE se.excellence_rate > 0.3",
+    "res": [
+     "error",
+     "OperationalError: no such column: s.CDSCode"
+    ],
+    "n_rows": 0,
+    "ok": false,
+    "ms": 4262,
+    "usd": 0.0011496,
+    "sig": "fail-1"
+   },
+   {
+    "sql": "SELECT MAX(f.`Percent (%) Eligible Free (Ages 5-17)`)\nFROM frpm f\nJOIN (\n    SELECT cds\n    FROM satscores\n    WHERE enroll12 > 0\n      AND NumTstTakr > 0\n      AND CAST(NumGE1500 AS REAL) / NumTstTakr > 0.3\n) s ON f.CDSCode = s.cds\nWHERE f.`Percent (%) Eligible Free (Ages 5-17)` IS NOT NULL",
+    "res": [
+     "ok",
+     [
+      [
+       "0.904907975460123"
+      ]
+     ]
+    ],
+    "n_rows": 1,
+    "ok": true,
+    "ms": 2668,
+    "usd": 0.0009287999999999999,
+    "sig": "-6402204152875984803"
+   }
+  ],
+  "repair": {
+   "sql": "SELECT MAX(f.`Percent (%) Eligible Free (Ages 5-17)`) AS max_free_meal_eligibility_rate\nFROM frpm f\nJOIN satscores s ON f.CDSCode = s.cds\nWHERE s.rtype = 'S'\n  AND s.NumTstTakr > 0\n  AND CAST(s.NumGE1500 AS REAL) / s.NumTstTakr > 0.3",
+   "res": [
+    "ok",
+    [
+     [
+      "0.904907975460123"
+     ]
+    ]
+   ],
+   "n_rows": 1,
+   "ok": true,
+   "ms": 15806,
+   "usd": 0.02109,
+   "sig": null
+  },
+  "large_alone": {
+   "sql": "SELECT MAX(f.`Percent (%) Eligible Free (Ages 5-17)`) AS max_free_meal_eligibility_rate\nFROM frpm AS f\nJOIN satscores AS s\n  ON f.CDSCode = s.cds\nWHERE s.rtype = 'S'\n  AND 1.0 * s.NumGE1500 / s.NumTstTakr > 0.3",
+   "res": [
+    "ok",
+    [
+     [
+      "0.904907975460123"
+     ]
+    ]
+   ],
+   "n_rows": 1,
+   "ok": true,
+   "ms": 5385,
+   "usd": 0.008076,
+   "sig": null
+  }
+ },
+ {
+  "qid": 60,
+  "db_id": "card_games",
+  "question": "What percentage of Coldsnap card printings have both a Card Kingdom regular-product ID and foil-product ID recorded?",
+  "evidence": "",
+  "gold_sql": "SELECT CAST(SUM(CASE WHEN T1.cardKingdomFoilId IS NOT NULL AND T1.cardKingdomId IS NOT NULL THEN 1 ELSE 0 END) AS REAL) * 100 / COUNT(T1.id) FROM cards AS T1 INNER JOIN sets AS T2 ON T2.code = T1.setCode WHERE T2.name = 'Coldsnap'",
+  "gold": "1 row(s): (100.0,)",
+  "samples": [
+   {
+    "sql": "WITH cs_cards AS (\n    SELECT\n        uuid,\n        cardKingdomId,\n        cardKingdomFoilId\n    FROM cards\n    WHERE printings LIKE '%CSP%'\n)\nSELECT\n    ROUND(\n        100.0 * SUM(CASE WHEN cardKingdomId IS NOT NULL AND cardKingdomId != '' AND cardKingdomFoilId IS NOT NULL AND cardKingdomFoilId != '' THEN 1 ELSE 0 END)\n        / COUNT(*), 2\n    ) AS percentage\nFROM cs_cards",
+    "res": [
+     "ok",
+     [
+      [
+       "68.24"
+      ]
+     ]
+    ],
+    "n_rows": 1,
+    "ok": false,
+    "ms": 2405,
+    "usd": 0.0009414000000000001,
+    "sig": "6967924552449980512"
+   },
+   {
+    "sql": "WITH cs AS (\n    SELECT\n        c.cardKingdomId,\n        c.cardKingdomFoilId\n    FROM cards c\n    JOIN sets s ON c.setCode = s.code\n    WHERE s.code = 'CSP'\n)\nSELECT\n    ROUND(\n        100.0 * SUM(\n            CASE\n                WHEN cardKingdomId IS NOT NULL AND TRIM(cardKingdomId) <> ''\n                 AND cardKingdomFoilId IS NOT NULL AND TRIM(cardKingdomFoilId) <> ''\n                THEN 1 ELSE 0 END\n        ) / COUNT(*), 2\n    ) AS pct_both_ids\nFROM cs",
+    "res": [
+     "ok",
+     [
+      [
+       "100.0"
+      ]
+     ]
+    ],
+    "n_rows": 1,
+    "ok": true,
+    "ms": 2525,
+    "usd": 0.0009966,
+    "sig": "588112102952891600"
+   },
+   {
+    "sql": "SELECT \n    ROUND(\n        (COUNT(CASE WHEN cardKingdomId IS NOT NULL AND cardKingdomId != '' \n                    AND cardKingdomFoilId IS NOT NULL AND cardKingdomFoilId != '' \n               THEN 1 END) * 100.0) / COUNT(*), \n        2\n    ) AS percentage\nFROM cards\nWHERE setCode = 'CSP'",
+    "res": [
+     "ok",
+     [
+      [
+       "100.0"
+      ]
+     ]
+    ],
+    "n_rows": 1,
+    "ok": true,
+    "ms": 1991,
+    "usd": 0.0008717999999999999,
+    "sig": "588112102952891600"
+   }
+  ],
+  "repair": {
+   "sql": "SELECT\n    ROUND(\n        100.0 * SUM(\n            CASE\n                WHEN cardKingdomId IS NOT NULL AND TRIM(cardKingdomId) <> ''\n                 AND cardKingdomFoilId IS NOT NULL AND TRIM(cardKingdomFoilId) <> ''\n                THEN 1 ELSE 0 END\n        ) / COUNT(*), 2\n    ) AS percentage\nFROM cards\nWHERE setCode = 'CSP'",
+   "res": [
+    "ok",
+    [
+     [
+      "100.0"
+     ]
+    ]
+   ],
+   "n_rows": 1,
+   "ok": true,
+   "ms": 3583,
+   "usd": 0.008325,
+   "sig": null
+  },
+  "large_alone": {
+   "sql": "SELECT ROUND(\n    100.0 * SUM(\n        CASE\n            WHEN cardKingdomId IS NOT NULL\n             AND cardKingdomFoilId IS NOT NULL\n            THEN 1\n            ELSE 0\n        END\n    ) / COUNT(*),\n    2\n) AS percentage\nFROM cards\nWHERE setCode = 'CSP'",
+   "res": [
+    "ok",
+    [
+     [
+      "100.0"
+     ]
+    ]
+   ],
+   "n_rows": 1,
+   "ok": true,
+   "ms": 5104,
+   "usd": 0.007884,
+   "sig": null
+  }
+ }
+]

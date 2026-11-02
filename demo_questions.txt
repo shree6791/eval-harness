@@ -1,28 +1,27 @@
-Five tune-set questions for judging.
-Pick them after the tune sweep: two the cheap model keeps, three the gate escalates.
-Paste each block into the demo page.
+Five tune-set questions for judging, with tau = 3: two the cheap model keeps, three the gate escalates.
+Paste each block into the demo page, or run: python demo.py
 
-1. kept
-db_id:
-question:
-evidence:
+1. kept (3/3 agree)
+db_id: card_games
+question: Among all Story Spotlight card printings, what percentage have a French translation? Round to two decimals.
+evidence: 
 
-2. kept
-db_id:
-question:
-evidence:
+2. kept (3/3 agree)
+db_id: codebase_community
+question: What is the display name of the user who last edited the post "Examples for teaching: Correlation does not mean causation"?
+evidence: 
 
-3. escalated
-db_id:
-question:
-evidence:
+3. escalated (1/3 agree)
+db_id: card_games
+question: What percentage of cards with format commander and legal status do not have a content warning?
+evidence: 
 
-4. escalated
-db_id:
-question:
-evidence:
+4. escalated (2/3 agree at tau=3)
+db_id: california_schools
+question: Among schools with a school-level SAT excellence rate above 0.3, what is the highest ages-5-17 free-meal eligibility rate?
+evidence: SAT excellence rate is the share of test takers scoring at least 1500.
 
-5. escalated
-db_id:
-question:
-evidence:
+5. escalated (2/3 agree at tau=3)
+db_id: card_games
+question: What percentage of Coldsnap card printings have both a Card Kingdom regular-product ID and foil-product ID recorded?
+evidence: 
