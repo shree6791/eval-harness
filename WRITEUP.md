@@ -101,7 +101,7 @@ https://github.com/shree6791/eval-harness
 
 ## Team
 
-- Shreenidhi Sudhakar · shree6791@gmail.com · LEAD
+- Shreenidhi Sudhakar · shree6791@gmail.com
 - Joseph Mikhail · mikhailj@gmail.com
 
 ## Notes and assumptions
