@@ -20,6 +20,12 @@ How we scored it
 - τ tuned on 150 questions, reported on the other 350.
 - Negative control: the grader passes the reference against itself 20/20 and fails deliberately broken SQL 0/20 (wrong filter, extra column, another question's query).
 
+What we optimized
+- Schema example values: both prompts list real values from each column after its CREATE TABLE (all values for columns with up to 20 distinct values, else 3 examples). Same 320 test questions before and after: Nemotron alone 28.1% → 41.9%, Kimi K3 alone 50.3% → 65.9%.
+- Output format: both prompts ask for one SQLite query inside a ```sql block with no explanation. On the 20-question smoke test, prose and empty replies went from 68 of 100 to 0.
+- Reasoning settings: Nemotron 3 Ultra runs with reasoning off (2 s instead of minutes per call); Kimi K3 gets a 16,384-token budget so reasoning does not crowd out the query.
+- Model switch: Nemotron 3.5 Lightning took about 6 minutes per call on event day; Nemotron 3 Ultra replaced it as the first-pass model.
+
 Results (test set, n = 350)
 - Nemotron 3 Ultra alone: 42.6% accurate, $2.50 per 1,000 questions, 1.6 s median
 - Kimi K3 alone: 66.3% accurate, $34.11 per 1,000 questions, 11.6 s median
