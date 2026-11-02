@@ -2,7 +2,7 @@
 
 ## Project name
 
-Nemotron-First SQL Cascade
+FirstDraft: Nemotron-first text-to-SQL, analyst-approved
 
 ## Overview
 
