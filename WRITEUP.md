@@ -75,13 +75,14 @@ Full results on the test set (n = 350):
 
 Having Kimi K3 repair every question (τ = 4) is the most accurate setup, 7.7 points above Kimi K3 alone, at three times the cost: working through three drafts makes Kimi write about 3.5 times as much as answering from scratch. τ = 3 is the balanced setting the review workflow uses.
 
-![Accuracy vs cost for every setting of τ](results/chart_compare.png)
-
 ### How we proved it
 
 - **Benchmark:** BIRD Mini-Dev, 500 real business questions over 11 real SQLite databases (banking, schools, sports, chemistry, healthcare and more), each with a reference query written by people.
 - **Scoring:** execution accuracy. Our query and the reference query both run; an answer counts only when the result sets match.
 - **No tuning on the test set:** τ was chosen on a separate set of 150 questions and reported on the other 350. On those 150, τ = 4 scored highest (74.0% vs 71.3% for Kimi K3 alone).
+
+  ![Accuracy vs cost for every setting of τ](results/chart_compare.png)
+
 - **Grader check:** the grader passes the reference query against itself 20 of 20 times and fails three kinds of deliberately broken SQL 20 of 20 times.
 - **Paired comparisons:** every setup answers the same questions.
 
