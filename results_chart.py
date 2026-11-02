@@ -112,11 +112,10 @@ def score(rows):
     return res
 
 
-# Human reference. Wage: mean hourly wage, San Jose-Sunnyvale-Santa Clara MSA, BLS OEWS May 2025,
-# averaged over database administrators ($69.78), database architects ($91.91),
-# data scientists ($102.29) and software developers ($106.59). That is $192,698 a year.
+# Human reference. BLS has no "data analyst" code; operations research analysts is the closest
+# analyst role. Mean hourly wage, San Jose-Sunnyvale-Santa Clara MSA, BLS OEWS May 2025 ($129,110 a year).
 # Minutes to write, minutes to review, and turnaround are assumptions; change them with the flags.
-HUMAN_WAGE = 92.64  # $ per hour
+HUMAN_WAGE = 62.07  # $ per hour
 
 
 def bars(scored, tau, split, n, out, human_minutes=30, human_days=2, review_minutes=10):
@@ -133,7 +132,7 @@ def bars(scored, tau, split, n, out, human_minutes=30, human_days=2, review_minu
     setups = ["Nemotron alone", "Kimi K3 alone", f"Cascade tau={tau}", "Draft + review"]
     names = {"Nemotron alone": "Nemotron 3 Ultra\nalone", "Kimi K3 alone": "Kimi K3\nalone",
              f"Cascade tau={tau}": "Cascade\n(Nemotron x3\n+ Kimi repair)",
-             "Draft + review": "Cascade draft\n+ engineer\nreview"}
+             "Draft + review": "Cascade draft\n+ analyst\nreview"}
     human = {"acc": 100.0, "usd1k": per_q * 1000, "per_correct": per_q, "p50s": human_days * 86400}
     panels = [("acc", "Accuracy, %", "{:.1f}%", False),
               ("usd1k", "Cost, $ per 1,000 questions (log)", "${:,.2f}", True),
@@ -158,20 +157,20 @@ def bars(scored, tau, split, n, out, human_minutes=30, human_days=2, review_minu
                 ax.annotate(show(v), (b.get_x() + b.get_width() / 2, b.get_height()),
                             textcoords="offset points", xytext=(0, 3), ha="center", fontsize=9)
         hb = ax.bar([x[-1]], [human[key]], 0.6, color="#9ca3af", hatch="//", edgecolor="#4b5563",
-                    label="Data engineer (reference)")
+                    label="Data analyst (reference)")
         label = "100%\n(answer key)" if key == "acc" else show(human[key])
         ax.annotate(label, (x[-1], human[key]), textcoords="offset points", xytext=(0, 3), ha="center", fontsize=9)
         if log:
             ax.set_yscale("log")
         ax.set_title(title, fontsize=13)
-        ax.set_xticks(x, [names[s] for s in setups] + ["Data engineer\n(human)"], fontsize=9)
+        ax.set_xticks(x, [names[s] for s in setups] + ["Data analyst\n(human)"], fontsize=9)
         ax.margins(y=0.2)
         ax.grid(axis="y", alpha=0.3)
     axes[0].legend(fontsize=10, loc="upper left")
     fig.suptitle(f"BIRD Mini-Dev, {split} split, n = {n}. Cascade at τ = {tau}.", fontsize=15)
-    fig.text(0.5, 0.005, f"Engineer cost: \\${HUMAN_WAGE}/h, the mean of four data roles in the San Jose metro (BLS OEWS, May 2025; \\$192,698/yr). "
+    fig.text(0.5, 0.005, f"Analyst cost: \\${HUMAN_WAGE}/h, operations research analysts in the San Jose metro (BLS OEWS, May 2025; \\$129,110/yr), the closest BLS role to a data analyst. "
              f"Assumed: {human_minutes:g} min to write a query, {review_minutes:g} min to review a draft, {human_days:g}-day turnaround. "
-             f"Draft + review: the engineer reviews every cascade answer and rewrites the wrong ones. "
+             f"Draft + review: the analyst reviews every cascade answer and rewrites the wrong ones. "
              f"Human accuracy is 100% by definition (the reference queries are the answer key).",
              ha="center", fontsize=10, color="#4b5563")
     fig.tight_layout(rect=(0, 0.03, 1, 1))
