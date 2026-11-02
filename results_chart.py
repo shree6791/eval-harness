@@ -155,11 +155,11 @@ def bars(scored, tau, split, n, out, human_minutes=30, human_days=2, review_minu
             bs = ax.bar(pos, vals, width, color=colour, label=name)
             for b, v in zip(bs, vals):
                 ax.annotate(show(v), (b.get_x() + b.get_width() / 2, b.get_height()),
-                            textcoords="offset points", xytext=(0, 3), ha="center", fontsize=9)
+                            textcoords="offset points", xytext=(0, 3), ha="center", fontsize=7.5)
         hb = ax.bar([x[-1]], [human[key]], 0.6, color="#9ca3af", hatch="//", edgecolor="#4b5563",
                     label="Data analyst (reference)")
         label = "100%\n(answer key)" if key == "acc" else show(human[key])
-        ax.annotate(label, (x[-1], human[key]), textcoords="offset points", xytext=(0, 3), ha="center", fontsize=9)
+        ax.annotate(label, (x[-1], human[key]), textcoords="offset points", xytext=(0, 3), ha="center", fontsize=7.5)
         if log:
             ax.set_yscale("log")
         ax.set_title(title, fontsize=13)
