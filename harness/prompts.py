@@ -1,7 +1,7 @@
 from harness.config import MAX_ROWS
 
 CHEAP_TMPL = """You write SQLite queries. Return only one SQLite query inside a ```sql code block. No explanation.
-Schema:
+Schema, with example values from the data (match their exact format and type):
 {ddl}
 
 Hint: {evidence}
@@ -9,7 +9,7 @@ Question: {question}
 SQL:"""
 
 REPAIR_TMPL = """You are fixing a SQLite query. Return only one SQLite query inside a ```sql code block. No explanation.
-Schema:
+Schema, with example values from the data (match their exact format and type):
 {ddl}
 
 Hint: {evidence}

@@ -8,7 +8,7 @@ import numpy as np
 from scipy.stats import binomtest
 
 from harness.config import EMPTY_IS_FAILURE, K, SEED
-from harness.gate import gate
+from harness.gate import gate, is_empty
 from harness.llm import usd
 from harness.sql import correct
 
@@ -32,7 +32,7 @@ def exec_gate(rows):
     out = []
     for r in rows:
         kind, payload = r["a0"]["res"]
-        esc = kind != "ok" or (EMPTY_IS_FAILURE and not payload)
+        esc = kind != "ok" or (EMPTY_IS_FAILURE and is_empty(payload))
         pick = r["c"] if esc else r["a0"]
         out.append(
             {
@@ -74,6 +74,9 @@ def summarize(res):
         "acc": round(float(ok.mean() * 100), 1),
         "esc%": round(float(esc.mean() * 100), 1),
         "$/1k": round(float(cost.mean() * 1000), 3),
+        # Total spend over correct answers; the write-up's headline number.
+        "$/correct": round(float(cost.sum() / ok.sum()), 5) if ok.sum() else "-",
+        "p50 all": pct(ms, 50),
         "p50 kept": pct(ms[~esc], 50),
         "p95 kept": pct(ms[~esc], 95),
         "p50 sent": pct(ms[esc], 50),

@@ -4,6 +4,7 @@ Evaluation passes cache every model call. The live service does not.
 """
 
 import asyncio
+import time
 
 from harness.config import CHEAP, GOLD_TIMEOUT_S, K, LARGE, TEMP_A, db_path
 from harness.gate import gate
@@ -27,7 +28,36 @@ async def schema_for(db_id):
 
 async def attach_results(db, recs):
     for rec in recs:
-        rec["res"] = await run_sql(db, rec["sql"])
+        if rec.get("error"):
+            rec["res"] = ("error", rec["error"])
+        elif not rec["sql"]:
+            rec["res"] = ("error", "no SQL in reply")
+        else:
+            rec["res"] = await run_sql(db, rec["sql"])
+
+
+async def safe_call(model, *args, **kw):
+    """A failed API call scores as a wrong answer instead of dropping the question.
+
+    Failures are not cached, so a later run retries them.
+    """
+    t0 = time.monotonic()
+    try:
+        return await call(model, *args, **kw)
+    except Exception as e:
+        err = f"{type(e).__name__}: {e}"[:300]
+        print("call failed:", model.rsplit("/", 1)[-1], err, flush=True)
+        # Time includes retries. Tokens are unknown, so cost counts as 0; see "billed".
+        return {
+            "model": model,
+            "sql": "",
+            "ms": (time.monotonic() - t0) * 1000,
+            "tin": 0,
+            "tout": 0,
+            "finish": "error",
+            "error": err,
+            "billed": "unknown",
+        }
 
 
 async def eval_question(q, stage):
@@ -41,11 +71,11 @@ async def eval_question(q, stage):
         "difficulty": q["difficulty"],
         "gold": await run_sql(db, q["SQL"], GOLD_TIMEOUT_S),
     }
-    jobs = {"a0": call(CHEAP, prompt, 0.0), "c": call(LARGE, prompt, 0.0)}
-    jobs.update({f"s{i}": call(CHEAP, prompt, TEMP_A, sample=i) for i in range(K)})
+    jobs = {"a0": safe_call(CHEAP, prompt, 0.0), "c": safe_call(LARGE, prompt, 0.0)}
+    jobs.update({f"s{i}": safe_call(CHEAP, prompt, TEMP_A, sample=i) for i in range(K)})
     if stage in ("rerun", "all"):
-        jobs["a0_r"] = call(CHEAP, prompt, 0.0, tag="rerun")
-        jobs["c_r"] = call(LARGE, prompt, 0.0, tag="rerun")
+        jobs["a0_r"] = safe_call(CHEAP, prompt, 0.0, tag="rerun")
+        jobs["c_r"] = safe_call(LARGE, prompt, 0.0, tag="rerun")
     recs = dict(zip(jobs, await asyncio.gather(*jobs.values())))
     await attach_results(db, recs.values())
     row["a"] = [recs.pop(f"s{i}") for i in range(K)]
@@ -53,8 +83,8 @@ async def eval_question(q, stage):
     if stage in ("repair", "all"):
         # tau = K + 1 only to recover c. The escalate flag is unused.
         _, _, c = gate([s["res"] for s in row["a"]], K + 1)
-        row["b"] = await call(LARGE, repair_prompt(q, ddl, row["a"], c), 0.0)
-        row["b"]["res"] = await run_sql(db, row["b"]["sql"])
+        row["b"] = await safe_call(LARGE, repair_prompt(q, ddl, row["a"], c), 0.0)
+        await attach_results(db, [row["b"]])
     return row
 
 
@@ -65,7 +95,7 @@ async def live_answer(db, question, evidence, tau, tag):
     prompt = cheap_prompt(q, ddl)
     samples = await asyncio.gather(
         *[
-            call(CHEAP, prompt, TEMP_A, sample=i, tag=tag, use_cache=False)
+            safe_call(CHEAP, prompt, TEMP_A, sample=i, tag=tag, use_cache=False)
             for i in range(K)
         ]
     )
@@ -74,14 +104,14 @@ async def live_answer(db, question, evidence, tau, tag):
     pick, tier = samples[best], "cheap"
     cost = sum(usd(s) for s in samples)
     if esc:
-        pick = await call(
+        pick = await safe_call(
             LARGE,
             repair_prompt(q, ddl, samples, c),
             0.0,
             tag=tag,
             use_cache=False,
         )
-        pick["res"] = await run_sql(db, pick["sql"])
+        await attach_results(db, [pick])
         tier = "large (repair)"
         cost += usd(pick)
     return pick, tier, c, cost

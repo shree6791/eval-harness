@@ -26,6 +26,9 @@ PRICE = {
 # reasoning_effort per model. Models not listed use their default reasoning.
 REASONING = {CHEAP: "none", CHEAP_BACKUP: "low"}
 MAX_TOKENS = 8192
+# Kimi K3 reasons by default and used all 8,192 tokens on tune qid 16 (empty reply).
+# A bigger budget keeps the large-alone baseline from being cut off.
+MAX_TOKENS_BY_MODEL = {LARGE: 16384}
 
 K = 3  # cheap samples per question
 TEMP_A = 0.6  # pass A temperature; 0 gives identical samples and a flat curve
