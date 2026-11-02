@@ -4,7 +4,7 @@ Nemotron-First SQL Cascade
 $ PROJECT.README
 Turn a plain-English business question into a database query: cheap-model cost, close to large-model accuracy.
 
-Analysts wait days on a data engineer for this. Our cascade answers in seconds.
+Business teams send every data question to an analyst, and analysts spend a large share of their week writing routine SQL instead of analyzing. Our cascade drafts the query in under a minute: NVIDIA Nemotron writes three attempts, and Kimi K3 repairs them. The analyst reviews a draft instead of writing from scratch. The answer is just as correct, about 31% cheaper, and arrives in minutes instead of days.
 
 How it works
 - NVIDIA Nemotron 3 Ultra (reasoning off, on Fireworks) writes three SQLite queries for the question. The prompt shows the schema with real example values from each column, so the model matches stored formats instead of guessing them.
