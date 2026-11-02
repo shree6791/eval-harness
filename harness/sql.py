@@ -1,7 +1,7 @@
 import sqlite3
 import time
 
-from config import MAX_ROWS, TIMEOUT_S
+from harness.config import MAX_ROWS, TIMEOUT_S
 
 
 def _connect(db_path):

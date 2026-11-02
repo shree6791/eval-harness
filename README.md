@@ -30,18 +30,24 @@ Fireworks lists both tier-1 model IDs for serverless shutdown on 7 Nov 2026. The
 
 ## Layout
 
-| File | Job |
+The library is the `harness` package. The root scripts are the runbook commands.
+
+| Path | Job |
 | --- | --- |
-| `config.py` | Paths, model IDs, prices, settings |
-| `sqlrun.py` | Execute SQL with a real timeout, compare results, read schema |
-| `gate.py` | Agreement gate |
+| `harness/config.py` | Paths, model IDs, prices, settings, `TAU` |
+| `harness/sql.py` | Execute SQL with a real timeout, compare results, read schema |
+| `harness/gate.py` | Agreement gate |
+| `harness/prompts.py` | Cheap prompt and repair prompt |
+| `harness/llm.py` | Cached, metered Fireworks calls |
+| `harness/cascade.py` | One question: samples, gate, repair |
+| `harness/scoring.py` | Sweep math, statistics, chart |
+| `harness/service.py` | `/ask` API |
+| `harness/page.html` | Demo page |
 | `split.py` | 150/350 split. Already run. |
 | `negative_control.py` | Proves the grader fails wrong SQL |
-| `prompts.py` | Cheap prompt and repair prompt |
-| `llm.py` | Cached, metered Fireworks calls |
 | `passes.py` | Passes A0, A, C, B, R |
-| `analyze.py` | Sweep, results table, statistics, chart |
-| `serve.py` | Live `/ask` service and demo page |
+| `analyze.py` | Results table |
+| `serve.py` | `uvicorn serve:app` |
 | `split.json` | Frozen split |
 | `data/MINIDEV/mini_dev_sqlite.json` | 500 questions, 2026-10-28 Mini-Dev update |
 | `demo_questions.txt` | Five tune questions for the live demo |
@@ -89,7 +95,7 @@ uvicorn serve:app --port 8000
 cloudflared tunnel --url http://localhost:8000
 ```
 
-Pass R is the run-to-run wobble re-run of A0 and C. Set `TAU` in `serve.py` to the tune-set choice and restart the service before judging.
+Pass R is the run-to-run wobble re-run of A0 and C. Set `TAU` in `harness/config.py` to the tune-set choice and restart the service before judging.
 
 ## Gate
 

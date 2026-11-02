@@ -1,0 +1,44 @@
+<!doctype html>
+<meta name="viewport" content="width=device-width">
+<title>Ask your data</title>
+<style>
+body{font:16px system-ui;max-width:860px;margin:32px auto;padding:0 16px}
+select,textarea,input{width:100%;font:inherit;margin:6px 0;padding:8px;box-sizing:border-box}
+button{font:inherit;padding:10px 24px}
+.badge{display:inline-block;padding:4px 12px;border-radius:12px;color:#fff;margin-right:8px}
+.cheap{background:#15803d}.large{background:#b45309}
+pre{background:#f4f4f5;padding:12px;white-space:pre-wrap}
+table{border-collapse:collapse}td{border:1px solid #ddd;padding:4px 8px}
+</style>
+<h1>Ask your data</h1>
+<select id="db"></select>
+<textarea id="q" rows="3" placeholder="Question in plain English"></textarea>
+<input id="h" placeholder="Hint (optional)">
+<button onclick="go()">Ask</button>
+<div id="out"></div>
+<script>
+function esc(s) {
+  return String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+fetch('/dbs').then(r => r.json()).then(d => {
+  db.innerHTML = d.map(x => `<option>${esc(x)}</option>`).join('');
+});
+async function go() {
+  out.textContent = 'Working...';
+  const resp = await fetch('/ask', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({db_id: db.value, question: q.value, evidence: h.value})
+  });
+  const r = await resp.json();
+  if (!resp.ok) {
+    out.textContent = r.detail || 'Request failed';
+    return;
+  }
+  const badge = r.tier === 'cheap' ? 'cheap' : 'large';
+  const rows = r.error
+    ? `<p>${esc(r.error)}</p>`
+    : '<table>' + r.rows.map(x => '<tr>' + x.map(v => `<td>${esc(v)}</td>`).join('') + '</tr>').join('') + '</table>';
+  out.innerHTML = `<p><span class="badge ${badge}">${esc(r.tier)}</span>agreement ${esc(r.agreement)} · $${esc(r.usd)} · ${esc(r.seconds)} s</p><pre>${esc(r.sql)}</pre>` + rows;
+}
+</script>

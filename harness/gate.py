@@ -1,7 +1,7 @@
 from collections import Counter
 
-from config import EMPTY_IS_FAILURE
-from sqlrun import as_set
+from harness.config import EMPTY_IS_FAILURE
+from harness.sql import as_set
 
 
 def signature(res, i):

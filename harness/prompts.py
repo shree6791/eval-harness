@@ -1,4 +1,4 @@
-from config import MAX_ROWS
+from harness.config import MAX_ROWS
 
 CHEAP_TMPL = """You write SQLite queries. Return only the SQL query, nothing else.
 Schema:

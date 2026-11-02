@@ -14,7 +14,7 @@ from pathlib import Path
 
 from openai import AsyncOpenAI
 
-from config import CONCURRENCY, PRICE
+from harness.config import CONCURRENCY, PRICE
 
 CACHE = Path("cache")
 CACHE.mkdir(exist_ok=True)
