@@ -137,7 +137,7 @@ const card = (slide, x, y, w, h, name) =>
     ["Measured, not demoed", "350 held-out questions, scored by running the SQL"],
     ["Built for review", "agreement does not signal correctness, so the analyst signs"],
     ["No lock-in", "open models on Fireworks; first-pass model swapped in one line"],
-    ["Clear next gain", "a correct draft exists for 88% of questions; we pick it 76%"],
+    ["Clear next gain", "a correct draft exists for 88% of questions; our best setup is right on 76%"],
   ];
   diffs.forEach(([head, sub], i) => {
     const y = 2.15 + i * 1.12;
