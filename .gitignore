@@ -1,0 +1,14 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+cache/
+*.pkl
+chart_*.png
+chart.png
+
+# SQLite databases are downloaded locally. The question file and split stay in git.
+data/MINIDEV/dev_databases/
+*.sqlite
+*.zip

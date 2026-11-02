@@ -1,0 +1,28 @@
+Five tune-set questions for judging.
+Pick them after the tune sweep: two the cheap model keeps, three the gate escalates.
+Paste each block into the demo page.
+
+1. kept
+db_id:
+question:
+evidence:
+
+2. kept
+db_id:
+question:
+evidence:
+
+3. escalated
+db_id:
+question:
+evidence:
+
+4. escalated
+db_id:
+question:
+evidence:
+
+5. escalated
+db_id:
+question:
+evidence:
