@@ -57,7 +57,7 @@ Text-to-SQL is crowded. Our edge is evidence and design.
 | First-pass model: Nemotron 3.5 Lightning → 3 Ultra | ~6 min per call | **~2 s** |
 | Unusable replies, 20-question trial (format and reasoning fixes) | 72 of 100 | **0** |
 
-Before/after rows and charts use the 320 test questions both runs answered. All other figures use the full 350.
+The two real-column-value rows and the charts use the 320 test questions both runs answered. All other figures use the full 350.
 
 ![Before vs after real column values, and a data analyst](results/chart_bars.png)
 
