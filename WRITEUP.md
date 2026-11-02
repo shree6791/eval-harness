@@ -73,7 +73,7 @@ Full results on the test set (n = 350):
 | Cascade, τ = 3, 47% escalated to Kimi K3 | 63.4% | $44.61 | $0.070 | 7.1 s |
 | Cascade, τ = 4, every question repaired by Kimi K3 (highest tune accuracy) | **75.7%** | $98.58 | $0.130 | 43.9 s |
 
-τ = 4 is the most accurate setup, 7.7 points above Kimi K3 alone, at three times its cost: Kimi reasons about twice as long when repairing three drafts as when answering cold. τ = 3 is the balanced setting the review workflow uses.
+τ = 4 is the most accurate setup, 7.7 points above Kimi K3 alone, at three times its cost: when repairing three drafts, Kimi writes about 3.5 times as many tokens as when answering cold (5,249 vs 1,513 on average). τ = 3 is the balanced setting the review workflow uses.
 
 ![Accuracy vs cost for every setting of τ](results/chart_compare.png)
 
@@ -108,8 +108,8 @@ Full results on the test set (n = 350):
 
 ## Team
 
-Shreenidhi Sudhakar · shree6791@gmail.com · LEAD
-Joseph Mikhail · mikhailj@gmail.com
+- Shreenidhi Sudhakar · shree6791@gmail.com · LEAD
+- Joseph Mikhail · mikhailj@gmail.com
 
 ## Notes and assumptions
 
