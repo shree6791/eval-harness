@@ -1,57 +1,47 @@
 # eval-harness
 
-Text-to-SQL cascade for the Fireworks × Microsoft × NVIDIA Buildathon (2 Nov 2026).
+Fireworks, Microsoft, and NVIDIA buildathon. 2 November 2026, San Francisco.
 
-A cheap model answers three times. A free agreement check compares the result sets. A large model repairs only the questions the check rejects. The target is large-model execution accuracy at a fraction of large-model cost.
+The brief: take open models and make a frontier on a task you define. Deploy it, evaluate it, measure the tradeoffs, tune one dimension against a baseline, and show the business value.
 
-The runbook called the repository `bird-cascade`. This repository is `eval-harness`.
+**Task.** Turn a plain-English business question into a database query. Analysts wait days on a data engineer for this.
 
-## Locked settings
+**Approach.** A cheap model answers three times. A free check compares the result sets. A large model repairs only the questions that check rejects. The aim is large-model accuracy at a fraction of large-model cost.
 
-| Setting | Value |
+## How this meets the brief
+
+| Brief | What we ship |
 | --- | --- |
-| Dataset | BIRD Mini-Dev, SQLite, all 500 questions, 11 databases |
-| Hint field | Used in every prompt |
-| Grader | `set(predicted rows) == set(reference rows)`, floats rounded to 6 places |
-| Split | 150 tune / 350 test, stratified by database × difficulty, seed 42. Committed. Do not regenerate. |
-| Tier 1 | `accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b` ($0.05 / $0.20 per 1M) |
-| Tier 1 backup | `accounts/fireworks/models/gpt-oss-120b` ($0.15 / $0.60) |
-| Tier 2 | `accounts/fireworks/models/kimi-k3` ($3.00 / $15.00 per 1M) |
-| Tier 2 backup | `accounts/fireworks/models/glm-5p3` ($1.40 / $4.40) |
-| Samples | k = 3, pass A temperature 0.6. Passes A0, B, and C use temperature 0. |
-| Query limits | 5 s and 10,000 rows for generated SQL. 30 s for reference SQL. Read-only. |
-| Empty result | Failure in the gate (`EMPTY_IS_FAILURE = True`) |
-| Tuned parameter | τ only. Escalate when the largest agreeing cluster `c < τ`. |
-| τ rule | Highest accuracy on the 150 tune questions. Ties within 1 point go to the cheaper τ. Report on the 350 test questions. |
+| Pick a task | Text-to-SQL over real business databases |
+| Deploy it | Cheap and large open models on Fireworks, behind a live `/ask` page |
+| Build an eval | [BIRD Mini-Dev](https://huggingface.co/datasets/birdsql/bird_mini_dev): 500 questions, 11 SQLite databases. Score is execution accuracy. No AI judge. |
+| Measure tradeoffs | Accuracy, percent escalated, dollars per 1,000 questions, p50/p95 latency for kept vs escalated |
+| Tune one dimension | Agreement threshold τ, swept from 0 to 4, against cheap-alone and large-alone |
+| Show the value | Cost per correct answer, seconds instead of days, share answered with no human |
 
-τ = 0 never escalates. τ = 4 always escalates. The sweep is offline: τ changes only the gate, not what any model returned.
+## How the cascade works
 
-Fireworks lists both tier-1 model IDs for serverless shutdown on 7 Nov 2026. The event is 2 Nov, so the locked IDs stay. Confirm each model with one live call at check-in and record any switch in `CHANGELOG.md` before the first scored run.
+1. The cheap model writes three SQLite queries (temperature 0.6).
+2. Each query runs read-only, with a 5 second timeout and a 10,000 row cap.
+3. Answers that return the same rows form a group. `c` is the size of the largest group (0–3). A crash, timeout, oversized result, or empty result never counts as agreement.
+4. If `c < τ`, the large model sees the question, the schema, the hint, the three attempts, and what each one did, then writes one corrected query.
 
-## Layout
+τ = 0 keeps the cheap answer every time. τ = 4 sends every question to the large model. Changing τ does not call the models again. The sweep reads cached results.
 
-The library is the `harness` package. The root scripts are the runbook commands.
+The winning τ is the most accurate setting on the 150-question tune split. A tie within 1 point goes to the cheaper τ. Report that choice on the 350-question test split. `split.json` is already frozen. Do not regenerate it.
 
-| Path | Job |
-| --- | --- |
-| `harness/config.py` | Paths, model IDs, prices, settings, `TAU` |
-| `harness/sql.py` | Execute SQL with a real timeout, compare results, read schema |
-| `harness/gate.py` | Agreement gate |
-| `harness/prompts.py` | Cheap prompt and repair prompt |
-| `harness/llm.py` | Cached, metered Fireworks calls |
-| `harness/cascade.py` | One question: samples, gate, repair |
-| `harness/scoring.py` | Sweep math, statistics, chart |
-| `harness/service.py` | `/ask` API |
-| `harness/page.html` | Demo page |
-| `split.py` | 150/350 split. Already run. |
-| `negative_control.py` | Proves the grader fails wrong SQL |
-| `passes.py` | Passes A0, A, C, B, R |
-| `analyze.py` | Results table |
-| `serve.py` | `uvicorn serve:app` |
-| `split.json` | Frozen split |
-| `data/MINIDEV/mini_dev_sqlite.json` | 500 questions, 2026-10-28 Mini-Dev update |
-| `demo_questions.txt` | Five tune questions for the live demo |
-| `WRITEUP.md` | Fill-in write-up for the submission |
+## Models
+
+Prices are dollars per 1 million tokens, input / output.
+
+| Role | Model | Price |
+| --- | --- | --- |
+| Cheap | `accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b` | 0.05 / 0.20 |
+| Cheap backup | `accounts/fireworks/models/gpt-oss-120b` | 0.15 / 0.60 |
+| Large | `accounts/fireworks/models/kimi-k3` | 3.00 / 15.00 |
+| Large backup | `accounts/fireworks/models/glm-5p3` | 1.40 / 4.40 |
+
+Both cheap IDs are listed for serverless shutdown on 7 November 2026. They stay in place for event day. Confirm each model with one live call before the scored run. Record any switch in `CHANGELOG.md`.
 
 ## Setup
 
@@ -59,12 +49,12 @@ The library is the `harness` package. The root scripts are the runbook commands.
 python3.11 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
-export FIREWORKS_API_KEY=...   # also in ~/.zshrc on the event laptop
+export FIREWORKS_API_KEY=...
 ```
 
-On the work laptop, point `SSL_CERT_FILE` and `REQUESTS_CA_BUNDLE` at the corporate CA bundle before calling `api.fireworks.ai`.
+On the work laptop, set `SSL_CERT_FILE` and `REQUESTS_CA_BUNDLE` to the corporate CA bundle.
 
-Databases are not in git. The question file is. Download the SQLite databases (the June 2024 `minidev.zip` backup; all 500 reference queries from the 2026 question file execute against these files):
+The 500 questions are in git. The databases are not. All 500 reference queries run against the June 2024 SQLite files:
 
 ```bash
 curl -L -o /tmp/minidev.zip https://bird-bench.oss-cn-beijing.aliyuncs.com/minidev.zip
@@ -73,32 +63,35 @@ mkdir -p data/MINIDEV
 mv /tmp/minidev/minidev/MINIDEV/dev_databases data/MINIDEV/dev_databases
 ```
 
-Confirm `data/MINIDEV/mini_dev_sqlite.json` and 11 folders of `dev_databases/<db_id>/<db_id>.sqlite`.
+You should then have `data/MINIDEV/mini_dev_sqlite.json` and 11 folders named `dev_databases/<db_id>/<db_id>.sqlite`. Questions are CC BY-SA 4.0.
 
-Questions are the 2026-10-28 Hugging Face update (`birdsql/bird_mini_dev`, SQLite split). The older JSON packed inside `minidev.zip` is unused. License: CC BY-SA 4.0. That file labels 460 questions challenging, 32 moderate, and 8 simple. The frozen split is still stratified on database × those labels.
-
-## Commands, in order
-
-`split.json` is already committed. Do not run `split.py` again.
+## Run
 
 ```bash
-python negative_control.py                         # 20/20, then 0/20 three times
+python negative_control.py                          # gold 20/20, three corruptions 0/20
 python passes.py --stage base --split tune --limit 20 --out rows_20.pkl
-python analyze.py --rows rows_20.pkl --split tune  # then review the SQL manually
-python passes.py --stage base                      # A0, A, C on all 500
+python analyze.py --rows rows_20.pkl --split tune   # read the SQL before the full run
+python passes.py --stage base                       # cheap alone, 3 samples, large alone
 python passes.py --stage rerun --out rows_rerun.pkl &
-python passes.py --stage repair                    # B on all 500
-python passes.py --stage all                       # merge; everything cached
-python analyze.py --split tune                     # prints the chosen tau
-python analyze.py --split test --tau 2             # final numbers + chart_test.png
+python passes.py --stage repair                     # large model fixes the 3 cheap attempts
+python passes.py --stage all
+python analyze.py --split tune                      # prints the chosen tau
+python analyze.py --split test --tau 2              # final table and chart_test.png
 uvicorn serve:app --port 8000
 cloudflared tunnel --url http://localhost:8000
 ```
 
-Pass R is the run-to-run wobble re-run of A0 and C. Set `TAU` in `harness/config.py` to the tune-set choice and restart the service before judging.
+Set `TAU` in `harness/config.py` to the tune-set choice, then restart the service. Five demo questions go in `demo_questions.txt`. The submission write-up is `WRITEUP.md`.
 
-## Gate
+## Code
 
-Execute all three cheap samples. Group them by result set. `c` is the size of the largest group that returned real rows (0–3). A crash, timeout, oversize result, or empty result never groups with anything. Escalate when `c < τ`.
-
-On escalation the large model sees the question, schema, hint, the three cheap queries, and what each one did: the exact error text, the row count, or the disagreement. It writes one corrected query.
+| Path | Role |
+| --- | --- |
+| `harness/cascade.py` | One question: three cheap answers, the gate, then repair |
+| `harness/gate.py` | Agreement rule |
+| `harness/sql.py` | Run SQL, time it out, compare result sets |
+| `harness/llm.py` | Cached, metered Fireworks calls |
+| `harness/scoring.py` | Accuracy, cost, latency, tau choice, chart |
+| `harness/service.py` | Live `/ask` API |
+| `harness/config.py` | Models, prices, limits, `TAU` |
+| `passes.py`, `analyze.py`, `serve.py` | Commands above |
