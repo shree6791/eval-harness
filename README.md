@@ -10,7 +10,7 @@ The brief: take open models and make a frontier on a task you define. Deploy it,
 
 **Approach.** NVIDIA Nemotron 3 Ultra drafts three queries, with real column values from the database in the prompt. A free check compares the result sets. Kimi K3 repairs the questions that check rejects. An analyst approves the draft instead of writing from a blank page.
 
-**Results (test set).** Real column values in the prompt raised NVIDIA Nemotron 3 Ultra from 28.1% to 41.9% and Kimi K3 from 50.3% to 65.9% on the same 320 questions. Draft + analyst review cuts analyst time per question from 30 to 22 minutes (assumed write and review times), so the same analysts answer 36% more questions. Full write-up: [`WRITEUP.md`](WRITEUP.md).
+**Results (test set).** Real column values in the prompt raised NVIDIA Nemotron 3 Ultra from 28.1% to 41.9% and Kimi K3 from 50.3% to 65.9% on the same 320 questions. Kimi K3 repairing Nemotron's three drafts scores 75.7% vs 68.0% for Kimi K3 alone on all 350 test questions (McNemar p = 0.006). Draft + analyst review cuts analyst time per question from 30 to 21 minutes (assumed write and review times), so the same analysts answer 43% more questions. Full write-up: [`WRITEUP.md`](WRITEUP.md).
 
 ![Accuracy, cost and time: baseline vs final vs a data analyst](results/chart_bars.png)
 
