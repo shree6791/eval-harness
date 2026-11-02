@@ -167,7 +167,7 @@ def bars(scored, tau, split, n, out, human_minutes=30, human_days=2, review_minu
         ax.margins(y=0.2)
         ax.grid(axis="y", alpha=0.3)
     axes[0].legend(fontsize=10, loc="upper left")
-    fig.suptitle(f"BIRD Mini-Dev, {split} split, n = {n}. Cascade at τ = {tau}.", fontsize=15)
+    fig.suptitle(f"Before vs after real column values: the {n} {split} questions both runs answered. Cascade at τ = {tau}.", fontsize=15)
     fig.text(0.5, 0.005, f"Analyst cost: \\${HUMAN_WAGE}/h, operations research analysts in the San Jose metro (BLS OEWS, May 2025; \\$129,110/yr), the closest BLS role to a data analyst.\n"
              f"Assumed: {human_minutes:g} min to write a query, {review_minutes:g} min to review a draft, {human_days:g}-day turnaround. "
              f"Draft + review: the analyst reviews every cascade answer and rewrites the wrong ones.\n"
@@ -195,7 +195,10 @@ def main():
         export(*a.export, old_gate=a.old_gate)
         return
 
-    runs = {Path(p).stem: json.loads(Path(p).read_text()) for p in a.runs}
+    # Plain names for the legend; any other run keeps its file name.
+    labels = {"baseline": "Before: schema only", "complete": "After: real column values",
+              "final": "After: real column values"}
+    runs = {labels.get(Path(p).stem, Path(p).stem): json.loads(Path(p).read_text()) for p in a.runs}
     # Same questions in every run, so the comparison is paired.
     shared = set.intersection(*[{r["qid"] for r in rows if a.split in ("all", r["split"]) and "repair" in r} for rows in runs.values()])
     scored = {name: score([r for r in rows if r["qid"] in shared]) for name, rows in runs.items()}
@@ -223,7 +226,7 @@ def main():
     ax.set_xscale("log")
     ax.set_xlabel("Cost, $ per 1,000 questions (log scale)", fontsize=13)
     ax.set_ylabel("Execution accuracy, %", fontsize=13)
-    ax.set_title(f"BIRD Mini-Dev, {a.split} split, n = {len(shared)} (same questions in every run)", fontsize=14)
+    ax.set_title(f"Accuracy vs cost for every τ: the {len(shared)} {a.split} questions both runs answered", fontsize=14)
     ax.grid(alpha=0.3, which="both")
     ax.legend(fontsize=10, loc="upper left")
     fig.tight_layout()

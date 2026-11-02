@@ -60,7 +60,7 @@ Natural-language-to-SQL is a crowded market. Our edge is evidence and design, no
 | First-pass model latency (Nemotron 3.5 Lightning → Nemotron 3 Ultra) | ~6 min per call | **~2 s per call** |
 | Unusable replies (empty, or text instead of SQL) in a 20-question trial run, fixed by output-format and reasoning settings | 72 of 100 | **0 of 100** |
 
-The first two rows compare the same 320 test questions before and after real column values were added to the prompt.
+The first two rows and the charts use the 320 test questions that both runs answered, so before and after are compared on identical questions. The full results table below uses all 350 test questions from the run with real column values, so its numbers differ slightly (Kimi K3 alone: 67.5% on the 320, 68.0% on all 350).
 
 ![Accuracy, cost and time: before and after real column values, and a data analyst](results/chart_bars.png)
 
