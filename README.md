@@ -36,7 +36,7 @@ Prices are dollars per 1 million tokens, input / output.
 
 | Role | Model | Price |
 | --- | --- | --- |
-| Cheap | `accounts/fireworks/models/nemotron-lightning-3p5-30b-a3b` | 0.05 / 0.20 |
+| Cheap | `accounts/fireworks/models/nemotron-3-ultra-nvfp4` (NVIDIA Nemotron 3 Ultra, reasoning off) | 0.60 / 2.40 |
 | Cheap backup | `accounts/fireworks/models/gpt-oss-120b` | 0.15 / 0.60 |
 | Large | `accounts/fireworks/models/kimi-k3` | 3.00 / 15.00 |
 | Large backup | `accounts/fireworks/models/glm-5p3` | 1.40 / 4.40 |

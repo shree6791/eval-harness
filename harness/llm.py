@@ -14,7 +14,7 @@ from pathlib import Path
 
 from openai import AsyncOpenAI
 
-from harness.config import CONCURRENCY, PRICE
+from harness.config import CONCURRENCY, MAX_TOKENS, PRICE, REASONING
 
 CACHE = Path("cache")
 CACHE.mkdir(exist_ok=True)
@@ -33,20 +33,29 @@ def get_client():
         _client = AsyncOpenAI(
             base_url="https://api.fireworks.ai/inference/v1",
             api_key=api_key,
+            timeout=120,
         )
     return _client
 
 
 def clean(text):
+    """SQL from a fenced block, else from the first SELECT or WITH line, else ""."""
     text = re.sub(r"<think>.*?</think>", "", text or "", flags=re.S)
     m = re.search(r"`{3}(?:sql)?\s*(.*?)`{3}", text, flags=re.S | re.I)
-    return (m.group(1) if m else text).strip().rstrip(";").strip()
+    if m:
+        sql = m.group(1)
+    else:
+        m = re.search(r"^\s*(SELECT|WITH)\b.*", text, flags=re.S | re.I | re.M)
+        sql = m.group(0).split(";")[0] if m else ""
+    return sql.strip().rstrip(";").strip()
 
 
 async def call(model, prompt, temperature, sample=0, tag="main", use_cache=True):
+    effort = REASONING.get(model)
     key = hashlib.sha256(
-        json.dumps([model, prompt, temperature, sample, tag]).encode()
+        json.dumps([model, prompt, temperature, sample, tag, MAX_TOKENS, effort]).encode()
     ).hexdigest()
+    extra = {"reasoning_effort": effort} if effort else {}
     path = CACHE / f"{key}.json"
     if use_cache and path.exists():
         return json.loads(path.read_text())
@@ -58,8 +67,9 @@ async def call(model, prompt, temperature, sample=0, tag="main", use_cache=True)
                 r = await client.chat.completions.create(
                     model=model,
                     temperature=temperature,
-                    max_tokens=2048,
+                    max_tokens=MAX_TOKENS,
                     messages=[{"role": "user", "content": prompt}],
+                    **extra,
                 )
                 ms = (time.monotonic() - t0) * 1000
             break
@@ -67,13 +77,20 @@ async def call(model, prompt, temperature, sample=0, tag="main", use_cache=True)
             if attempt == 3:
                 raise
             await asyncio.sleep(2 ** attempt)
+    choice = r.choices[0]
+    content = choice.message.content
     rec = {
         "model": model,
-        "sql": clean(r.choices[0].message.content),
+        "sql": clean(content),
         "ms": ms,
         "tin": r.usage.prompt_tokens,
         "tout": r.usage.completion_tokens,
+        "finish": choice.finish_reason,
     }
+    if not rec["sql"]:
+        rec["raw"] = (content or "")[:2000]
+    if choice.finish_reason == "length":
+        print(f"warning: {model} hit max_tokens={MAX_TOKENS}")
     if use_cache:
         path.write_text(json.dumps(rec))
     return rec
