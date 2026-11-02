@@ -95,4 +95,5 @@ Set `TAU` in `harness/config.py` to the tune-set choice, then restart the servic
 | `harness/service.py` | Live `/ask` API |
 | `harness/config.py` | Models, prices, limits, `TAU` |
 | `passes.py`, `analyze.py`, `serve.py` | Commands above |
+| `results_chart.py`, `results/` | Saved per-question results per run; one chart of Nemotron alone, Kimi K3 alone and the cascade for every run on shared questions |
 | `demo.py`, `demo_cases.json`, `demo_compare.json` | Five-question cascade walkthrough (`--live` for real calls); `--compare` shows the baseline prompt vs schema example values on four questions |
