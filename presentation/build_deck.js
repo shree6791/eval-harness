@@ -56,7 +56,7 @@ const card = (slide, x, y, w, h, name) =>
     txt(s, big, { x, y: 4.6, w: 3.8, h: 1.0, fontSize: 54, bold: true, color: C.accent6, fontFace: THEME.headFontFace });
     txt(s, small, { x, y: 5.6, w: 3.8, h: 0.5, fontSize: 16, color: C.background2 });
   });
-  txt(s, "Fireworks, Microsoft and NVIDIA buildathon · San Francisco · 2 November 2026", { x: 0.7, y: 6.75, w: 11.9, h: 0.35, fontSize: 12, color: C.accent4 });
+  txt(s, "Evaluated on BIRD Mini-Dev (500 business questions, 11 real databases) · Fireworks, Microsoft and NVIDIA buildathon · San Francisco · 2 November 2026", { x: 0.7, y: 6.75, w: 11.9, h: 0.35, fontSize: 12, color: C.accent4 });
   s.addNotes("Countersign turns a plain-English business question into a working SQL query. NVIDIA Nemotron drafts it, Kimi K3 repairs it, and an analyst signs off. The headline: analysts answer 43% more questions at 30% lower cost per answer, and real column values in the prompt added up to 17 points of accuracy.");
 }
 
@@ -92,27 +92,27 @@ const card = (slide, x, y, w, h, name) =>
 // 3. Results
 {
   const s = pres.addSlide({ masterName: "CONTENT" });
-  s.addText("Real values add 16–17 pts; repair adds 7.7 more", { placeholder: "title" });
+  s.addText("Cascade wins: 75.7% vs 68.0% for Kimi K3 alone", { placeholder: "title" });
+  txt(s, "Benchmark: BIRD Mini-Dev, 500 real business questions over 11 real databases, each with a human-written answer query. Scored by running both queries; no AI grader.", { x: 0.6, y: 1.2, w: 12.1, h: 0.5, fontSize: 14, color: C.text2 });
   s.addChart(pres.charts.BAR, [
-    { name: "Before: schema only", labels: ["Nemotron 3 Ultra alone", "Kimi K3 alone"], values: [28.1, 50.3] },
-    { name: "After: real column values", labels: ["Nemotron 3 Ultra alone", "Kimi K3 alone"], values: [43.8, 67.5] },
+    { name: "Accuracy", labels: ["Nemotron 3 Ultra alone\n$2.54 per 1k", "Kimi K3 alone\n$32.41 per 1k", "Cascade: Nemotron x3\n+ Kimi repair\n$98.58 per 1k"], values: [43.4, 68.0, 75.7] },
   ], {
-    x: 0.6, y: 1.45, w: 6.9, h: 5.0, barDir: "col", barGapWidthPct: 60,
-    chartColors: [HEX.accent4, HEX.accent1],
-    showValue: true, dataLabelPosition: "outEnd", dataLabelFormatCode: "0.0\"%\"", dataLabelFontSize: 14, dataLabelColor: HEX.dk1, dataLabelFontFace: "+mn-lt",
-    showTitle: true, title: "Accuracy, same 320 test questions", titleFontSize: 16, titleColor: HEX.dk1, titleFontFace: "+mn-lt",
-    valAxisMinVal: 0, valAxisMaxVal: 80, valAxisHidden: true, valGridLine: { style: "none" },
-    catAxisLabelColor: HEX.dk2, catAxisLabelFontSize: 14, catAxisLabelFontFace: "+mn-lt", catGridLine: { style: "none" },
-    showLegend: true, legendPos: "b", legendFontSize: 13, legendColor: HEX.dk2, legendFontFace: "+mn-lt",
+    x: 0.6, y: 1.8, w: 6.9, h: 4.75, barDir: "col", barGapWidthPct: 50,
+    chartColors: [HEX.accent4, HEX.accent4, HEX.accent1],
+    showValue: true, dataLabelPosition: "outEnd", dataLabelFormatCode: "0.0\"%\"", dataLabelFontSize: 16, dataLabelColor: HEX.dk1, dataLabelFontFace: "+mn-lt",
+    showTitle: true, title: "Accuracy on 350 held-out test questions", titleFontSize: 16, titleColor: HEX.dk1, titleFontFace: "+mn-lt",
+    valAxisMinVal: 0, valAxisMaxVal: 90, valAxisHidden: true, valGridLine: { style: "none" },
+    catAxisLabelColor: HEX.dk2, catAxisLabelFontSize: 13, catAxisLabelFontFace: "+mn-lt", catGridLine: { style: "none" },
+    showLegend: false,
   });
-  card(s, 7.9, 1.55, 4.8, 2.35, "repair card");
-  txt(s, "75.7%", { x: 8.2, y: 1.7, w: 4.3, h: 0.95, fontSize: 54, bold: true, color: C.accent2, fontFace: THEME.headFontFace });
-  txt(s, "Kimi K3 repairing Nemotron's three drafts, vs 68.0% for Kimi K3 alone (all 350 test questions, p = 0.006)", { x: 8.2, y: 2.65, w: 4.3, h: 1.1, fontSize: 15, color: C.text1, valign: "top" });
-  card(s, 7.9, 4.1, 4.8, 2.35, "speed card");
-  txt(s, "6 min → 2 s", { x: 8.2, y: 4.25, w: 4.3, h: 0.95, fontSize: 44, bold: true, color: C.accent1, fontFace: THEME.headFontFace });
-  txt(s, "per first draft after switching to Nemotron 3 Ultra; unusable replies cut from 72 of 100 to 0", { x: 8.2, y: 5.2, w: 4.3, h: 1.1, fontSize: 15, color: C.text1, valign: "top" });
-  txt(s, "BIRD Mini-Dev: 500 business questions, 11 real databases, human-written reference queries. Scored by running both queries; no AI grader. τ chosen on 150 questions, reported on 350.", { x: 0.6, y: 6.6, w: 12.1, h: 0.45, fontSize: 11, color: C.text2 });
-  s.addNotes("Scored on BIRD Mini-Dev by running our query and the human-written reference and comparing results; no AI grades AI. Showing real column values added 15.7 points to Nemotron and 17.2 to Kimi on the same questions. Having Kimi repair Nemotron's three drafts reached 75.7%, 7.7 points above Kimi alone, statistically significant at p = 0.006.");
+  card(s, 7.9, 1.85, 4.8, 2.25, "column values card");
+  txt(s, "+16–17 pts", { x: 8.2, y: 2.0, w: 4.3, h: 0.9, fontSize: 44, bold: true, color: C.accent2, fontFace: THEME.headFontFace });
+  txt(s, "from real column values in the prompt: Nemotron 28.1% → 43.8%, Kimi K3 50.3% → 67.5% (same 320 questions)", { x: 8.2, y: 2.9, w: 4.3, h: 1.1, fontSize: 15, color: C.text1, valign: "top" });
+  card(s, 7.9, 4.3, 4.8, 2.25, "repair card");
+  txt(s, "+7.7 pts", { x: 8.2, y: 4.45, w: 4.3, h: 0.9, fontSize: 44, bold: true, color: C.accent1, fontFace: THEME.headFontFace });
+  txt(s, "cascade over Kimi K3 alone, statistically significant (p = 0.006), at three times the cost", { x: 8.2, y: 5.35, w: 4.3, h: 1.1, fontSize: 15, color: C.text1, valign: "top" });
+  txt(s, "τ chosen on 150 separate questions, reported on the other 350. This question file is mostly the hardest tier, so scores are not comparable to the public BIRD leaderboard.", { x: 0.6, y: 6.7, w: 12.1, h: 0.4, fontSize: 11, color: C.text2 });
+  s.addNotes("We scored everything on BIRD Mini-Dev: 500 real business questions over 11 real databases, each with a human-written answer query. An answer counts only if our query returns the same rows. The cascade, where Nemotron writes three drafts and Kimi K3 repairs them, reaches 75.7%, beating Kimi K3 alone at 68.0% and Nemotron alone at 43.4%; the gap over Kimi is statistically significant. Showing real column values in the prompt added 16 to 17 points to both models.");
 }
 
 // 4. Business value and differentiation
