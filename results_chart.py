@@ -168,12 +168,12 @@ def bars(scored, tau, split, n, out, human_minutes=30, human_days=2, review_minu
         ax.grid(axis="y", alpha=0.3)
     axes[0].legend(fontsize=10, loc="upper left")
     fig.suptitle(f"BIRD Mini-Dev, {split} split, n = {n}. Cascade at τ = {tau}.", fontsize=15)
-    fig.text(0.5, 0.005, f"Analyst cost: \\${HUMAN_WAGE}/h, operations research analysts in the San Jose metro (BLS OEWS, May 2025; \\$129,110/yr), the closest BLS role to a data analyst. "
+    fig.text(0.5, 0.005, f"Analyst cost: \\${HUMAN_WAGE}/h, operations research analysts in the San Jose metro (BLS OEWS, May 2025; \\$129,110/yr), the closest BLS role to a data analyst.\n"
              f"Assumed: {human_minutes:g} min to write a query, {review_minutes:g} min to review a draft, {human_days:g}-day turnaround. "
-             f"Draft + review: the analyst reviews every cascade answer and rewrites the wrong ones. "
+             f"Draft + review: the analyst reviews every cascade answer and rewrites the wrong ones.\n"
              f"Human accuracy is 100% by definition (the reference queries are the answer key).",
              ha="center", fontsize=10, color="#4b5563")
-    fig.tight_layout(rect=(0, 0.03, 1, 1))
+    fig.tight_layout(rect=(0, 0.08, 1, 1))
     fig.savefig(out, dpi=150)
     print(f"bars -> {out}")
 
