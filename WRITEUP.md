@@ -62,7 +62,7 @@ Natural-language-to-SQL is a crowded market. Our edge is evidence and design, no
 
 The first two rows compare the same 320 test questions before and after the change, from the first full run.
 
-![Accuracy, cost and time: baseline vs final vs a data analyst](results/chart_bars.png)
+![Accuracy, cost and time: baseline vs the complete run vs a data analyst](results/chart_bars.png)
 
 Full results on the test set (n = 350):
 
@@ -116,7 +116,7 @@ Joseph Mikhail · mikhailj@gmail.com
 - **Analyst cost:** $62.07 per hour, the mean wage for operations research analysts in the San Jose-Sunnyvale-Santa Clara metro (BLS OEWS, May 2025; $129,110 a year). BLS has no separate data analyst code; this is the closest analyst role.
 - **Assumed:** 30 minutes for an analyst to write a query, 10 minutes to review a draft, and a multi-day queue today. Savings depend on the ratio of review time to write time, not on the wage.
 - **Draft + review:** cascade cost per question at τ = 3, plus 10 minutes of review on every question, plus 30 minutes of rewriting on the 36.6% the cascade gets wrong. Analyst time: 10 + 0.366 × 30 = 21 minutes.
-- **Two full runs:** the full results table and the repair row come from the second, complete run (500 questions, 0 failed calls; 4 Kimi K3 replies cut off at 32,768 tokens count as wrong). The first run lost 53 test repair calls to the Fireworks spending limit; it supplies the before/after rows for real column values and the charts, which show the same pattern.
+- **Two full runs:** the full results table and the repair row come from the second, complete run (500 questions, 0 failed calls; 4 Kimi K3 replies cut off at 32,768 tokens count as wrong). The first run lost 53 test repair calls to the Fireworks spending limit; it supplies the before/after rows for real column values. The charts compare the baseline with the complete run on the 320 test questions both runs answered.
 - **Benchmark comparability:** the 2026-10-28 question file is mostly the hardest tier (460 of 500 questions are challenging), so scores are not comparable to the published BIRD leaderboard.
 - **Cascade:** a cheap model answers first and a stronger model handles only the questions the cheap model is unsure about.
 - **τ (tau):** the number of Nemotron's three drafts that must return the same rows for the answer to be kept without escalation.
