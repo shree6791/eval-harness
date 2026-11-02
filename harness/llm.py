@@ -8,6 +8,7 @@ import asyncio
 import hashlib
 import json
 import os
+import random
 import re
 import time
 from pathlib import Path
@@ -60,7 +61,7 @@ async def call(model, prompt, temperature, sample=0, tag="main", use_cache=True)
     if use_cache and path.exists():
         return json.loads(path.read_text())
     client = get_client()
-    for attempt in range(4):
+    for attempt in range(8):
         try:
             async with SEM:
                 t0 = time.monotonic()
@@ -74,9 +75,10 @@ async def call(model, prompt, temperature, sample=0, tag="main", use_cache=True)
                 ms = (time.monotonic() - t0) * 1000
             break
         except Exception:
-            if attempt == 3:
+            if attempt == 7:
                 raise
-            await asyncio.sleep(2 ** attempt)
+            # Backoff up to 60 s so rate limits (HTTP 429) clear instead of failing the question.
+            await asyncio.sleep(min(60, 2 ** attempt) + random.random())
     choice = r.choices[0]
     content = choice.message.content
     rec = {

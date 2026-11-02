@@ -18,3 +18,4 @@ Settings in the runbook change only through an entry here.
 | 2 Nov, 12:15 PT | Smoke test | `clean()` falls back to the first SELECT or WITH line when there is no code fence. Both prompts ask for one query in a ```sql block. | 6 |
 | 2 Nov, 12:15 PT | Smoke test | 20 tune questions: 0 empty, 0 truncated replies. Cheap alone 25%, Kimi K3 alone 45%. Cheap p50 2.6 s; Kimi p50 9.0 s, p95 121 s. | 6 |
 | 2 Nov, 12:25 PT | Full run | `CONCURRENCY` raised from 16 to 48. At 16 the full run did ~70 calls a minute (Kimi K3 latency); at 48 it does ~290 with no rate-limit errors. Cache keys are unchanged. | 6 |
+| 2 Nov, 12:45 PT | Full run | Fireworks returned HTTP 429 at `CONCURRENCY` 48 and 76 questions failed after 4 short retries. `CONCURRENCY` lowered to 24; retries raised to 8 with backoff up to 60 s plus jitter. Cached calls were kept; the rerun makes only the missing calls. | 6 |
