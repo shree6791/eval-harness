@@ -112,18 +112,28 @@ def score(rows):
     return res
 
 
-# Human reference. Wage: BLS median for database administrators and architects, May 2025.
-# Minutes per question and turnaround are assumptions; change them with the flags.
-HUMAN_WAGE = 60.94  # $ per hour
+# Human reference. Wage: mean hourly wage, San Jose-Sunnyvale-Santa Clara MSA, BLS OEWS May 2025,
+# averaged over database administrators ($69.78), database architects ($91.91),
+# data scientists ($102.29) and software developers ($106.59). That is $192,698 a year.
+# Minutes to write, minutes to review, and turnaround are assumptions; change them with the flags.
+HUMAN_WAGE = 92.64  # $ per hour
 
 
-def bars(scored, tau, split, n, out, human_minutes=30, human_days=2):
+def bars(scored, tau, split, n, out, human_minutes=30, human_days=2, review_minutes=10):
     """Four panels: accuracy, $ per 1,000, $ per correct, median time. Cost and time use log scales
     because the human reference is several orders of magnitude above the models."""
-    setups = ["Nemotron alone", "Kimi K3 alone", f"Cascade tau={tau}"]
-    names = {"Nemotron alone": "Nemotron 3 Ultra\nalone", "Kimi K3 alone": "Kimi K3\nalone",
-             f"Cascade tau={tau}": "Cascade\n(Nemotron x3 +\nKimi repair)"}
     per_q = HUMAN_WAGE * human_minutes / 60
+    # AI draft + engineer review: the engineer checks every cascade answer and rewrites the wrong ones.
+    for res in scored.values():
+        cas = res[f"Cascade tau={tau}"]
+        wrong = 1 - cas["acc"] / 100
+        cost = cas["usd1k"] / 1000 + HUMAN_WAGE * (review_minutes + wrong * human_minutes) / 60
+        res["Draft + review"] = {"acc": 100.0, "usd1k": cost * 1000, "per_correct": cost,
+                                 "p50s": cas["p50s"] + review_minutes * 60}
+    setups = ["Nemotron alone", "Kimi K3 alone", f"Cascade tau={tau}", "Draft + review"]
+    names = {"Nemotron alone": "Nemotron 3 Ultra\nalone", "Kimi K3 alone": "Kimi K3\nalone",
+             f"Cascade tau={tau}": "Cascade\n(Nemotron x3\n+ Kimi repair)",
+             "Draft + review": "Cascade draft\n+ engineer\nreview"}
     human = {"acc": 100.0, "usd1k": per_q * 1000, "per_correct": per_q, "p50s": human_days * 86400}
     panels = [("acc", "Accuracy, %", "{:.1f}%", False),
               ("usd1k", "Cost, $ per 1,000 questions (log)", "${:,.2f}", True),
@@ -131,9 +141,11 @@ def bars(scored, tau, split, n, out, human_minutes=30, human_days=2):
               ("p50s", "Median time to answer (log)", None, True)]
 
     def human_time(v):
-        return f"{v / 86400:.0f} days" if v >= 86400 else f"{v:.1f} s"
+        if v >= 86400:
+            return f"{v / 86400:.0f} days"
+        return f"{v / 60:.1f} min" if v >= 120 else f"{v:.1f} s"
 
-    fig, axes = plt.subplots(1, 4, figsize=(22, 6.5))
+    fig, axes = plt.subplots(1, 4, figsize=(26, 7))
     width = 0.8 / len(scored)
     x = np.arange(len(setups) + 1)
     for ax, (key, title, fmt, log) in zip(axes, panels):
@@ -152,14 +164,15 @@ def bars(scored, tau, split, n, out, human_minutes=30, human_days=2):
         if log:
             ax.set_yscale("log")
         ax.set_title(title, fontsize=13)
-        ax.set_xticks(x, [names[s] for s in setups] + ["Data engineer\n(human)"], fontsize=10)
+        ax.set_xticks(x, [names[s] for s in setups] + ["Data engineer\n(human)"], fontsize=9)
         ax.margins(y=0.2)
         ax.grid(axis="y", alpha=0.3)
     axes[0].legend(fontsize=10, loc="upper left")
     fig.suptitle(f"BIRD Mini-Dev, {split} split, n = {n}. Cascade at τ = {tau}.", fontsize=15)
-    fig.text(0.5, 0.005, f"Data engineer: BLS May 2025 median wage ${HUMAN_WAGE}/h (database administrators and architects), "
-             f"{human_minutes} min per question and {human_days}-day turnaround assumed. "
-             f"Human accuracy is 100% by definition: the reference queries are the answer key.",
+    fig.text(0.5, 0.005, f"Engineer cost: \\${HUMAN_WAGE}/h, the mean of four data roles in the San Jose metro (BLS OEWS, May 2025; \\$192,698/yr). "
+             f"Assumed: {human_minutes:g} min to write a query, {review_minutes:g} min to review a draft, {human_days:g}-day turnaround. "
+             f"Draft + review: the engineer reviews every cascade answer and rewrites the wrong ones. "
+             f"Human accuracy is 100% by definition (the reference queries are the answer key).",
              ha="center", fontsize=10, color="#4b5563")
     fig.tight_layout(rect=(0, 0.03, 1, 1))
     fig.savefig(out, dpi=150)
@@ -177,6 +190,7 @@ def main():
     ap.add_argument("--tau", type=int, default=4, help="cascade setting shown in the bar charts")
     ap.add_argument("--human-minutes", type=float, default=30, help="data engineer minutes per question (assumed)")
     ap.add_argument("--human-days", type=float, default=2, help="data engineer turnaround in days (assumed)")
+    ap.add_argument("--review-minutes", type=float, default=10, help="engineer minutes to review an AI draft (assumed)")
     a = ap.parse_args()
     if a.export:
         export(*a.export, old_gate=a.old_gate)
@@ -195,7 +209,7 @@ def main():
             esc = f"{m['esc']:.0f}%" if "esc" in m else ""
             print(f"  {setup:16s} {m['acc']:8.1f}% {m['usd1k']:8.2f} {m['per_correct']:10.4f} {m['p50s']:6.1f} {esc:>9s}")
 
-    bars(scored, a.tau, a.split, len(shared), a.bars_out, a.human_minutes, a.human_days)
+    bars(scored, a.tau, a.split, len(shared), a.bars_out, a.human_minutes, a.human_days, a.review_minutes)
 
     fig, ax = plt.subplots(figsize=(11, 7))
     for colour, (name, res) in zip(COLOURS, scored.items()):
