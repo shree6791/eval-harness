@@ -8,11 +8,11 @@ Turning plain-English business questions into database queries. Analysts wait da
 
 ## What we deployed
 
-A cheap open model (Nemotron 3.5 Lightning) and a large one (Kimi K3) on Fireworks serverless, behind a service running the chain: the cheap model answers three times, an automatic checker compares the results, and the large model repairs only what the checker rejects. Live at ____.
+A cheap open model (Nemotron 3 Ultra, reasoning off) and a large one (Kimi K3) on Fireworks serverless, behind a service running the chain: the cheap model answers three times, an automatic checker compares the results, and the large model repairs only what the checker rejects. Live at ____.
 
 ## How we scored it
 
-BIRD Mini-Dev: 500 real questions over 11 real databases, each with a reference query. We run ours, run the reference, and compare result sets with BIRD's own rule. No AI grader. Tuned on 150 questions, reported on the other 350.
+BIRD Mini-Dev: 500 real questions over 11 real databases, each with a reference query. We run ours, run the reference, and compare result sets with BIRD's own rule. No AI grader. Tuned on 150 questions, reported on the other 350. The question file is the 2026-10-28 Mini-Dev SQLite update: mostly challenging (460 of 500) and almost entirely new questions, so scores here are not comparable to published BIRD Mini-Dev or leaderboard numbers. All setups are compared on the same questions. Floats are rounded to 6 places before comparing.
 
 ## The checker
 
