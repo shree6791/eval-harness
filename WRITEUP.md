@@ -45,7 +45,7 @@ Text-to-SQL is crowded. Our edge is evidence and design.
 - **Built for review:** model agreement does not signal correctness, so the analyst stays in charge.
 - **A lever any team can use:** real column values add 16–17 points to both models, with no fine-tuning.
 - **No lock-in:** open models on Fireworks; we swapped the first-pass model mid-event with one line.
-- **A clear next gain:** a correct draft already exists for 88% of questions; we pick it 76% of the time.
+- **A clear next gain:** a correct draft exists for 88% of questions; our best setup is right on 76%.
 
 ### Results
 
