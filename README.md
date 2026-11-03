@@ -82,12 +82,27 @@ python passes.py --stage rerun --out rows_rerun.pkl &
 python passes.py --stage repair                     # large model fixes the 3 cheap attempts
 python passes.py --stage all
 python analyze.py --split tune                      # prints the chosen tau
-python analyze.py --split test --tau 2              # final table and chart_test.png
+python analyze.py --split test --tau 4              # final table and chart_test.png
 uvicorn serve:app --port 8000
 cloudflared tunnel --url http://localhost:8000
 ```
 
 Set `TAU` in `harness/config.py` to the tune-set choice, then restart the service. Five demo questions go in `demo_questions.txt`. The submission write-up is `WRITEUP.md`.
+
+### Reproduce the reported results without an API key
+
+The per-question results of both runs are in `results/`: `baseline.json` (schema only) and `complete.json` (real column values, the reported run).
+
+```bash
+# Full results table in WRITEUP.md: all 350 test questions of the reported run
+python results_chart.py results/complete.json --split test --tau 3
+
+# Before/after rows and both charts: the 320 test questions both runs answered
+python results_chart.py results/baseline.json results/complete.json --split test --tau 3 \
+  --out results/chart_compare.png --bars-out results/chart_bars.png
+```
+
+To regenerate `complete.json` from a new run: `python results_chart.py --export rows.pkl results/complete.json`.
 
 ## Code
 

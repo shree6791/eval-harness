@@ -35,6 +35,8 @@ A user asks in plain English and gets a working SQL query with results, drafted 
 | Accuracy | 100% | 100% (every answer reviewed) |
 | Cost | $31.04 | $21.75 (30% lower) |
 
+With τ = 4, where Kimi K3 repairs every draft, the same math gives 17 min per question (74% more questions per analyst) at $17.98 (42% lower).
+
 No one is replaced. Analysts stay accountable for every answer and clear the backlog faster.
 
 ### Why this is different
@@ -49,11 +51,13 @@ Text-to-SQL is crowded. Our edge is evidence and design.
 
 ### Results
 
+**Baseline:** Kimi K3 alone, a frontier-class open model answering each question by itself. The full Countersign cascade beats it by 7.7 points (95% CI +2.6 to +12.9; p = 0.006) on 350 held-out questions.
+
 | What we changed | Before | After |
 | --- | --- | --- |
 | Real column values: Nemotron 3 Ultra alone | 28.1% | **43.8% (+15.7)** |
 | Real column values: Kimi K3 alone | 50.3% | **67.5% (+17.2)** |
-| Kimi K3 repairing Nemotron's drafts vs Kimi K3 alone (p = 0.006) | 68.0% | **75.7% (+7.7)** |
+| Kimi K3 repairing Nemotron's drafts vs Kimi K3 alone (95% CI +2.6 to +12.9; p = 0.006) | 68.0% | **75.7% (+7.7)** |
 | First-pass model: Nemotron 3.5 Lightning → 3 Ultra | ~6 min per call | **~2 s** |
 | Unusable replies, 20-question trial (format and reasoning fixes) | 72 of 100 | **0** |
 
@@ -61,12 +65,12 @@ The two real-column-value rows and the charts use the 320 test questions both ru
 
 ![Before vs after real column values, and a data analyst](results/chart_bars.png)
 
-| Test set (n = 350) | Accuracy | $ per 1,000 questions | $ per correct answer | Median time |
+| Test set (n = 350) | Accuracy (95% CI) | $ per 1,000 questions | $ per correct answer | Median time |
 | --- | --- | --- | --- | --- |
-| Nemotron 3 Ultra alone | 43.4% | $2.54 | $0.006 | 2.1 s |
-| Kimi K3 alone | 68.0% | $32.41 | $0.048 | 15.0 s |
-| Cascade τ = 3: Kimi fixes disagreements only (47%) | 63.4% | $44.61 | $0.070 | 7.1 s |
-| Cascade τ = 4: Kimi repairs every question | **75.7%** | $98.58 | $0.130 | 43.9 s |
+| Nemotron 3 Ultra alone | 43.4% (38.3–48.6) | $2.54 | $0.006 | 2.1 s |
+| Kimi K3 alone (baseline) | 68.0% (63.1–72.9) | $32.41 | $0.048 | 15.0 s |
+| Cascade τ = 3: Kimi fixes disagreements only (47%) | 63.4% (58.6–68.3) | $44.61 | $0.070 | 7.1 s |
+| Cascade τ = 4: Kimi repairs every question | **75.7% (71.1–80.0)** | $98.58 | $0.130 | 43.9 s |
 
 τ = 4 is the most accurate setup, at three times the cost of Kimi K3 alone. τ = 3 is the balanced setting used in the review workflow.
 
@@ -110,6 +114,8 @@ https://github.com/shree6791/eval-harness
 - **Assumed:** 30 min to write a query, 10 min to review a draft. Draft + review = 10 min review + 30 min rewrite on the 36.6% the τ = 3 cascade gets wrong = 21 min.
 - **Run:** 500 of 500 questions (150 to choose τ, 350 reported). No failed calls; 144 rate-limited Kimi calls retried successfully. 4 of about 1,000 Kimi replies ran out of length and count as wrong.
 - **p = 0.006:** McNemar test; a gap this large would appear by chance less than 1% of the time.
+- **Confidence intervals:** 95% bootstrap intervals over the 350 test questions (10,000 resamples); the +7.7-point interval is paired, question by question.
+- **Baseline scope:** the frontier baseline is Kimi K3, an open model. Closed models (GPT, Claude, Gemini) were not tested.
 - **Comparability:** this question file is mostly the hardest tier (460 of 500), so scores are not comparable to the public BIRD leaderboard.
 - **Cascade:** a cheap model answers first; a stronger model handles only what the cheap model is unsure about.
 - **τ (tau):** how many of Nemotron's three drafts must return the same rows to skip escalation.
