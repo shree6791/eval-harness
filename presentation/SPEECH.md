@@ -24,7 +24,7 @@ Thanks. We didn't just demo this, we measured it. BIRD Mini-Dev: 500 real busine
 
 **Slide 5: 43% more capacity, no one replaced**
 
-For the business: analysts still approve every answer, but reviewing a draft takes 21 minutes instead of 30. Same team, 43% more questions, 30% lower cost, and no one replaced. It runs on NVIDIA Nemotron and Fireworks serverless, and since a correct draft already exists for 88% of questions, picking it is our next gain. Thank you.
+For the business: analysts still approve every answer, but reviewing a draft takes 21 minutes instead of 30. Same team, 43% more questions, 30% lower cost, and no one replaced. It runs on NVIDIA Nemotron and Fireworks serverless, and next, we get to 88% accuracy: the right answer is already among our drafts 88% of the time, so we just need to get better at choosing it. Thank you.
 
 ## Backup answers for Q&A
 

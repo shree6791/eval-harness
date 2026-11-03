@@ -45,7 +45,7 @@ Text-to-SQL is crowded. Our edge is evidence and design.
 - **Built for review:** model agreement does not signal correctness, so the analyst stays in charge.
 - **A lever any team can use:** real column values add 16–17 points to both models, with no fine-tuning.
 - **No lock-in:** open models on Fireworks; we swapped the first-pass model mid-event with one line.
-- **A clear next gain:** a correct draft exists for 88% of questions; our best setup is right on 76%.
+- **Room to grow:** the right answer is already among our drafts on 88% of questions; today we deliver it on 76%.
 
 ### Results
 
@@ -81,10 +81,10 @@ The two real-column-value rows and the charts use the 320 test questions both ru
 
 ### Where this goes next
 
-- **Pick the right draft:** close the gap between 76% and the 88% where a correct draft exists.
-- **Cheaper repair:** lower Kimi reasoning effort to bring τ = 3 below Kimi K3 alone on cost.
-- **Self-serve:** routine questions go straight to users; analysts review high-stakes ones.
-- **Beyond SQL:** any output with a cheap automatic check (JSON, code, tool calls).
+- **Get to 88% accurate:** the right answer is already among our drafts 88% of the time; we need to get better at choosing it.
+- **Cut the cost** of the expert model's fixes.
+- **Let business users self-serve** routine questions; analysts check only the high-stakes ones.
+- **Apply it to other tasks** that can be checked automatically, like forms, reports or code.
 
 ### Code
 

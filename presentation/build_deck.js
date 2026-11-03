@@ -178,7 +178,7 @@ const card = (slide, x, y, w, h, name) =>
   const items = [
     ["NVIDIA Nemotron 3 Ultra", "every first draft in ~2 s, under a cent"],
     ["Fireworks serverless", "both models, one API; we swapped models with one line"],
-    ["Next: 76% → 88%", "a correct draft already exists for 88% of questions; pick it"],
+    ["Next: get to 88% accurate", "the right answer is already among our drafts 88% of the time; we need to choose it better"],
   ];
   items.forEach(([head, sub], i) => {
     const y = 2.15 + i * 1.12;
@@ -187,7 +187,7 @@ const card = (slide, x, y, w, h, name) =>
     txt(s, sub, { x: 8.4, y: y + 0.4, w: 4.3, h: 0.6, fontSize: 14, color: C.text2, valign: "top" });
   });
   txt(s, "github.com/shree6791/eval-harness · Team: Shreenidhi Sudhakar · Joseph Mikhail", { x: 0.6, y: 6.6, w: 11.5, h: 0.35, fontSize: 13, color: C.text2 });
-  s.addNotes("[Shree] For the business: analysts still approve every answer, but reviewing a draft takes 21 minutes instead of 30. Same team, 43% more questions, 30% lower cost, and no one replaced. It runs on NVIDIA Nemotron and Fireworks serverless, and since a correct draft already exists for 88% of questions, picking it is our next gain. Thank you.");
+  s.addNotes("[Shree] For the business: analysts still approve every answer, but reviewing a draft takes 21 minutes instead of 30. Same team, 43% more questions, 30% lower cost, and no one replaced. It runs on NVIDIA Nemotron and Fireworks serverless, and next, we get to 88% accuracy: the right answer is already among our drafts 88% of the time, so we just need to get better at choosing it. Thank you.");
 }
 
 (async () => {
