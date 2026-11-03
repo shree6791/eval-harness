@@ -1,55 +1,64 @@
 # Countersign
 
-SQL drafted by Nemotron, signed off by analysts. Repository: `eval-harness`.
+SQL drafted by NVIDIA Nemotron, signed off by analysts. Built at the Fireworks, Microsoft and NVIDIA buildathon, San Francisco, 2 November 2026. Repository: `eval-harness`.
 
-Fireworks, Microsoft, and NVIDIA buildathon. 2 November 2026, San Francisco.
+## What it does
 
-The brief: take open models and make a frontier on a task you define. Deploy it, evaluate it, measure the tradeoffs, tune one dimension against a baseline, and show the business value.
+A business user asks a question in plain English. Countersign turns it into a database query (SQL), runs it, and hands an analyst a working draft to approve.
 
-**Task.** Turn a plain-English business question into a database query. Business users wait days for an analyst, and analysts spend skilled hours on routine SQL.
+1. NVIDIA Nemotron 3 Ultra writes three drafts, using real example values from the database.
+2. All three run on the database. If they disagree or fail, Kimi K3 reviews them and writes a corrected query.
+3. An analyst signs off on every answer.
 
-**Approach.** NVIDIA Nemotron 3 Ultra drafts three queries, with real column values from the database in the prompt. A free check compares the result sets. Kimi K3 repairs the questions that check rejects. An analyst approves the draft instead of writing from a blank page.
+## Results
 
-**Results (test set).** Real column values in the prompt raised NVIDIA Nemotron 3 Ultra from 28.1% to 43.8% and Kimi K3 from 50.3% to 67.5% on the same 320 questions. Kimi K3 repairing Nemotron's three drafts scores 75.7% vs 68.0% for Kimi K3 alone on all 350 test questions (McNemar p = 0.006). Draft + analyst review cuts analyst time per question from 30 to 21 minutes (assumed write and review times), so the same analysts answer 43% more questions. Full write-up: [`WRITEUP.md`](WRITEUP.md).
+On 350 held-out questions from the BIRD Mini-Dev benchmark:
 
-![Accuracy, cost and time: baseline vs final vs a data analyst](results/chart_bars.png)
-
-## How this meets the brief
-
-| Brief | What we ship |
+| Setup | Right answers |
 | --- | --- |
-| Pick a task | Text-to-SQL over real business databases |
-| Deploy it | Cheap and large open models on Fireworks, behind a live `/ask` page |
-| Build an eval | [BIRD Mini-Dev](https://huggingface.co/datasets/birdsql/bird_mini_dev): 500 questions, 11 SQLite databases. Score is execution accuracy. No AI judge. |
-| Measure tradeoffs | Accuracy, percent escalated, dollars per 1,000 questions, p50/p95 latency for kept vs escalated |
-| Tune one dimension | Agreement threshold τ, swept from 0 to 4, against cheap-alone and large-alone |
-| Show the value | Cost per correct answer, seconds instead of days, share answered with no human |
+| Nemotron 3 Ultra alone | 43.4% |
+| Kimi K3 alone (baseline) | 68.0% |
+| **Countersign, Kimi K3 checks every question** | **75.7%** |
 
-## How the cascade works
+- Countersign beats the baseline by 7.7 points (95% CI +2.6 to +12.9; p = 0.006).
+- Showing the models real data values added 16 to 17 points to both.
+- With an analyst reviewing every draft, each analyst handles 43% more questions at 30% lower cost (based on assumed review and writing times).
 
-1. The cheap model writes three SQLite queries (temperature 0.6).
-2. Each query runs read-only, with a 5 second timeout and a 10,000 row cap.
-3. Answers that return the same rows form a group. `c` is the size of the largest group (0–3). A crash, timeout, oversized result, or empty result never counts as agreement.
-4. If `c < τ`, the large model sees the question, the schema, the hint, the three attempts, and what each one did, then writes one corrected query.
+Full write-up with assumptions: [`WRITEUP.md`](WRITEUP.md). Slides and a 2-minute script: [`presentation/`](presentation/).
 
-τ = 0 keeps the cheap answer every time. τ = 4 sends every question to the large model. Changing τ does not call the models again. The sweep reads cached results.
+![Before vs after real column values, and a data analyst](results/chart_bars.png)
 
-The winning τ is the most accurate setting on the 150-question tune split. A tie within 1 point goes to the cheaper τ. Report that choice on the 350-question test split. `split.json` is already frozen. Do not regenerate it.
+## How the check works
 
-## Models
+- Nemotron writes three queries. Each runs read-only, with a 5-second limit and a 10,000-row cap.
+- Drafts that return the same rows count as agreeing. A crash, timeout or empty result never counts as agreement.
+- **τ (tau)** is how many drafts must agree to skip Kimi K3. τ = 0 never calls Kimi; τ = 3 calls Kimi unless all three agree; τ = 4 can't be met with three drafts, so Kimi checks every question.
+- τ is the one setting we tuned. We test every value from 0 to 4 on 150 questions, pick the most accurate (a tie within 1 point goes to the cheaper one), and report it on the other 350. `split.json` fixes which questions are which; do not regenerate it.
 
-Prices are dollars per 1 million tokens, input / output.
+## Reproduce the results (no API key needed)
 
-| Role | Model | Price |
-| --- | --- | --- |
-| Cheap | `accounts/fireworks/models/nemotron-3-ultra-nvfp4` (NVIDIA Nemotron 3 Ultra, reasoning off) | 0.60 / 2.40 |
-| Cheap backup | `accounts/fireworks/models/gpt-oss-120b` | 0.15 / 0.60 |
-| Large | `accounts/fireworks/models/kimi-k3` | 3.00 / 15.00 |
-| Large backup | `accounts/fireworks/models/glm-5p3` | 1.40 / 4.40 |
+Every question's result from both runs is saved in `results/`: `baseline.json` (no example values) and `complete.json` (the reported run).
 
-The cheap backup (`gpt-oss-120b`) and the original cheap model (`nemotron-lightning-3p5-30b-a3b`, replaced on event day) are listed for serverless shutdown on 7 November 2026. Confirm each model with one live call before a scored run. Record any switch in `CHANGELOG.md`.
+```bash
+pip install -r requirements.txt
 
-## Setup
+# The full results table: all 350 test questions
+python results_chart.py results/complete.json --split test --tau 3
+
+# Before vs after example values, and both charts: the 320 questions both runs answered
+python results_chart.py results/baseline.json results/complete.json --split test --tau 3 \
+  --out results/chart_compare.png --bars-out results/chart_bars.png
+```
+
+See four questions before and after example values, without any API calls:
+
+```bash
+python demo.py --compare
+```
+
+## Run the full evaluation (needs a Fireworks API key)
+
+### Setup
 
 ```bash
 python3.11 -m venv .venv
@@ -58,9 +67,7 @@ pip install -r requirements.txt
 export FIREWORKS_API_KEY=...
 ```
 
-On the work laptop, set `SSL_CERT_FILE` and `REQUESTS_CA_BUNDLE` to the corporate CA bundle.
-
-The 500 questions are in git. The databases are not. All 500 reference queries run against the June 2024 SQLite files:
+The 500 questions are in git. Download the 11 SQLite databases:
 
 ```bash
 curl -L -o /tmp/minidev.zip https://bird-bench.oss-cn-beijing.aliyuncs.com/minidev.zip
@@ -71,50 +78,44 @@ mv /tmp/minidev/minidev/MINIDEV/dev_databases data/MINIDEV/dev_databases
 
 You should then have `data/MINIDEV/mini_dev_sqlite.json` and 11 folders named `dev_databases/<db_id>/<db_id>.sqlite`. Questions are CC BY-SA 4.0.
 
-## Run
+### Run
 
 ```bash
-python negative_control.py                          # gold 20/20, three corruptions 0/20
-python passes.py --stage base --split tune --limit 20 --out rows_20.pkl
-python analyze.py --rows rows_20.pkl --split tune   # read the SQL before the full run
-python passes.py --stage base                       # cheap alone, 3 samples, large alone
-python passes.py --stage rerun --out rows_rerun.pkl &
-python passes.py --stage repair                     # large model fixes the 3 cheap attempts
-python passes.py --stage all
-python analyze.py --split tune                      # prints the chosen tau
-python analyze.py --split test --tau 4              # final table and chart_test.png
-uvicorn serve:app --port 8000
-cloudflared tunnel --url http://localhost:8000
+python negative_control.py              # grader check: correct query 20/20, broken queries 0/20
+python passes.py --stage all            # all model calls; every call is cached
+python analyze.py --split tune          # tests every τ and prints the chosen one
+python analyze.py --split test --tau 4  # final table and chart
+python results_chart.py --export rows.pkl results/complete.json   # save per-question results
 ```
 
-Set `TAU` in `harness/config.py` to the tune-set choice, then restart the service. Five demo questions go in `demo_questions.txt`. The submission write-up is `WRITEUP.md`.
+Live service: set `TAU` in `harness/config.py`, then `uvicorn serve:app --port 8000` and open the `/ask` page.
 
-### Reproduce the reported results without an API key
+## Models
 
-The per-question results of both runs are in `results/`: `baseline.json` (schema only) and `complete.json` (real column values, the reported run).
+All models run on Fireworks serverless. Prices are dollars per 1 million tokens, input / output.
 
-```bash
-# Full results table in WRITEUP.md: all 350 test questions of the reported run
-python results_chart.py results/complete.json --split test --tau 3
+| Role | Model | Price |
+| --- | --- | --- |
+| Drafts | `accounts/fireworks/models/nemotron-3-ultra-nvfp4` (NVIDIA Nemotron 3 Ultra, reasoning off) | 0.60 / 2.40 |
+| Drafts backup | `accounts/fireworks/models/gpt-oss-120b` | 0.15 / 0.60 |
+| Fixes | `accounts/fireworks/models/kimi-k3` | 3.00 / 15.00 |
+| Fixes backup | `accounts/fireworks/models/glm-5p3` | 1.40 / 4.40 |
 
-# Before/after rows and both charts: the 320 test questions both runs answered
-python results_chart.py results/baseline.json results/complete.json --split test --tau 3 \
-  --out results/chart_compare.png --bars-out results/chart_bars.png
-```
-
-To regenerate `complete.json` from a new run: `python results_chart.py --export rows.pkl results/complete.json`.
+`gpt-oss-120b` and the original draft model (`nemotron-lightning-3p5-30b-a3b`, replaced on event day) are scheduled for serverless shutdown on 7 November 2026. Record any model switch in `CHANGELOG.md`.
 
 ## Code
 
-| Path | Role |
+| Path | What it does |
 | --- | --- |
-| `harness/cascade.py` | One question: three cheap answers, the gate, then repair |
-| `harness/gate.py` | Agreement rule |
-| `harness/sql.py` | Run SQL, time it out, compare result sets |
+| `harness/cascade.py` | One question: three drafts, the agreement check, then the fix |
+| `harness/gate.py` | The agreement rule |
+| `harness/sql.py` | Runs SQL safely, compares results, and builds the schema with example values |
+| `harness/prompts.py` | The prompts |
 | `harness/llm.py` | Cached, metered Fireworks calls |
-| `harness/scoring.py` | Accuracy, cost, latency, tau choice, chart |
-| `harness/service.py` | Live `/ask` API |
-| `harness/config.py` | Models, prices, limits, `TAU` |
-| `passes.py`, `analyze.py`, `serve.py` | Commands above |
-| `results_chart.py`, `results/` | Saved per-question results per run; one chart of Nemotron alone, Kimi K3 alone and the cascade for every run on shared questions |
-| `demo.py`, `demo_cases.json`, `demo_compare.json` | Five-question cascade walkthrough (`--live` for real calls); `--compare` shows the baseline prompt vs schema example values on four questions |
+| `harness/scoring.py` | Accuracy, cost, time and the choice of τ |
+| `harness/service.py` | The live `/ask` page |
+| `harness/config.py` | Models, prices, limits and `TAU` |
+| `passes.py`, `analyze.py`, `serve.py` | The commands above |
+| `results_chart.py`, `results/` | Saved results per run and the charts |
+| `demo.py` | Before/after walkthrough of example values, no API calls needed |
+| `presentation/` | Slides, the script that builds them, and the 2-minute speech |
